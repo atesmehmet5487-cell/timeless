@@ -458,6 +458,13 @@ export function SettingsScreen({
           />
         </div>
       </section>
+
+      {/* Hakkında — hangi sürümün yüklü olduğu buradan görünür */}
+      <section className="rounded-2xl border border-line bg-surface p-4 text-center">
+        <p className="font-semibold">Timeless Ödeme Asistanı</p>
+        <p className="mt-0.5 text-sm text-ink-soft">V{__APP_VERSION__}</p>
+        <p className="mt-2 text-xs text-muted">Ateş tarafından hazırlanmıştır</p>
+      </section>
     </div>
   );
 }

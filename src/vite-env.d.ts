@@ -12,3 +12,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/** package.json sürümü — derleme sırasında yerine yazılır (vite.config.ts). */
+declare const __APP_VERSION__: string;
