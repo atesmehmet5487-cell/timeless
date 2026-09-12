@@ -91,7 +91,11 @@ export function useStore() {
           const result = await migrateLocalToCloud(getLocalRepository(), cloud);
           if (cancelled) return;
           if (result.moved) {
-            setCloudNotice(`${result.payments} kayıt buluta taşındı`);
+            setCloudNotice(
+              result.payments > 0
+                ? `Bu cihazdaki ${result.payments} kayıt buluta taşındı`
+                : 'Bu cihazdaki işaretlemeler buluta taşındı',
+            );
           }
           setRepo(cloud);
           setMode('cloud');

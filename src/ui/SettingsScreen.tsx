@@ -343,9 +343,9 @@ export function SettingsScreen({
               bağlantı gelince kendiliğinden eşitlenir.
             </p>
             <p className="mt-3 text-xs text-muted">
-              Giriş yapmadan önce bu cihaza girdiğin kayıtlar buluta çıkmamış
-              olabilir (bulutta kayıt varken ilk giriş taşıması atlanır).
-              Aşağıdaki düğme onları yukarı taşır; iki kez basmak zarar vermez.
+              Giriş yapmadan önce bu cihaza girdiğin kayıtlar girişte
+              kendiliğinden yukarı taşınır. Bir şey eksik kaldıysa aşağıdaki
+              düğme aynı işi elle yapar; iki kez basmak zarar vermez.
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               <Button

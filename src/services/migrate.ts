@@ -1,40 +1,44 @@
 /**
- * İlk girişte cihazdaki kayıtları buluta taşır.
+ * Girişte cihazda kalmış kayıtları buluta taşır.
  *
- * Yalnızca bir kez, yalnızca bulut boşken ve yalnızca yerelde kayıt varken
- * çalışır. Böylece ikinci bir cihazdan giriş yapıldığında oradaki eski
- * kayıtlar ekibin verisinin üzerine yazılmaz.
+ * Kural basit: **bulutta olmayan** kayıtlar yukarı çıkar, bulutta olanlara
+ * dokunulmaz. Böylece bir cihazdaki eski kopya, ekibin güncel verisinin
+ * üzerine hiçbir zaman yazmaz — ama gerçek kayıtlar da o cihazda mahsur
+ * kalmaz.
  *
- * Taşıma "merge" ile yapılır: aynı kimlikli kayıt varsa üzerine yazmaz,
- * olmayanı ekler.
+ * Her girişte çalışır: ilk girişte hepsi, sonrakilerde yalnızca aradaki
+ * fark taşınır. Silinen kayıtlar bulutta "mezar taşı" olarak durduğu için
+ * (deletedAt) geri dirilmezler.
+ *
+ * Ayarlar yalnızca bulut boşken taşınır; doluysa ekibin ayarları esastır.
  */
-import type { Repository } from './repo';
-
-/** Taşımanın yapıldığı bu cihazda işaretlenir. */
-const FLAG_KEY = 'timeless.cloudMigrated';
-
-function alreadyMigrated(): boolean {
-  try {
-    return localStorage.getItem(FLAG_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function markMigrated(): void {
-  try {
-    localStorage.setItem(FLAG_KEY, '1');
-  } catch {
-    /* depolama kapalıysa bir dahaki girişte tekrar denenir */
-  }
-}
+import type { BackupData, Repository } from './repo';
 
 export interface MigrationResult {
   moved: boolean;
   payments: number;
   overrides: number;
   contacts: number;
-  reason?: 'zaten-taşındı' | 'yerel-boş' | 'bulut-dolu';
+  reason?: 'yerel-boş';
+}
+
+/** Bulutta hangi kimlikler var? */
+async function cloudIds(cloud: Repository): Promise<{
+  payments: Set<string>;
+  overrides: Set<string>;
+  contacts: Set<string>;
+}> {
+  const [payments, overrides, contacts] = await Promise.all([
+    cloud.listPayments({ includeArchived: true, includeDeleted: true }),
+    cloud.listOverrides(),
+    cloud.listContacts(),
+  ]);
+  return {
+    payments: new Set(payments.map((p) => p.id)),
+    // Müdahaleler (paymentId, tarih) ikilisiyle tekilleşir
+    overrides: new Set(overrides.map((o) => `${o.paymentId}_${o.originalDate}`)),
+    contacts: new Set(contacts.map((c) => c.id)),
+  };
 }
 
 export async function migrateLocalToCloud(
@@ -43,29 +47,31 @@ export async function migrateLocalToCloud(
 ): Promise<MigrationResult> {
   const empty = { moved: false, payments: 0, overrides: 0, contacts: 0 };
 
-  if (alreadyMigrated()) return { ...empty, reason: 'zaten-taşındı' };
-
-  const backup = await local.exportAll();
-  const localCount = backup.payments.length + backup.contacts.length;
-  if (localCount === 0) {
-    markMigrated();
+  const backup: BackupData = await local.exportAll();
+  if (backup.payments.length + backup.contacts.length === 0) {
     return { ...empty, reason: 'yerel-boş' };
   }
 
-  // Bulutta kayıt varsa taşıma yapılmaz: ekibin verisi esastır
-  const cloudPayments = await cloud.listPayments({ includeArchived: true, includeDeleted: true });
-  if (cloudPayments.length > 0) {
-    markMigrated();
-    return { ...empty, reason: 'bulut-dolu' };
-  }
+  const existing = await cloudIds(cloud);
+  const cloudWasEmpty = existing.payments.size === 0 && existing.contacts.size === 0;
 
-  await cloud.importAll(backup, 'merge');
-  markMigrated();
+  const payments = backup.payments.filter((p) => !existing.payments.has(p.id));
+  const overrides = backup.overrides.filter(
+    (o) => !existing.overrides.has(`${o.paymentId}_${o.originalDate}`),
+  );
+  const contacts = backup.contacts.filter((c) => !existing.contacts.has(c.id));
+
+  for (const payment of payments) await cloud.savePayment(payment);
+  for (const override of overrides) await cloud.saveOverride(override);
+  for (const contact of contacts) await cloud.saveContact(contact);
+
+  // Belge başlığı, özel kategoriler gibi ortak ayarlar yalnızca ilk kurulumda
+  if (cloudWasEmpty) await cloud.saveSettings(backup.settings);
 
   return {
-    moved: true,
-    payments: backup.payments.length,
-    overrides: backup.overrides.length,
-    contacts: backup.contacts.length,
+    moved: payments.length + overrides.length + contacts.length > 0,
+    payments: payments.length,
+    overrides: overrides.length,
+    contacts: contacts.length,
   };
 }
