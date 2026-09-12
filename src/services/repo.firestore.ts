@@ -22,13 +22,13 @@ import {
 import * as D from '../domain/date';
 import { DEFAULT_SETTINGS } from '../domain/types';
 import type { Contact, ISODate, Override, Payment, Settings } from '../domain/types';
-import { cloudDb, TEAM_ID } from './cloud';
+import { cloudDb, currentTeamId } from './cloud';
 import { TRASH_RETENTION_DAYS, type BackupData, type Repository } from './repo';
 
 type Collection = 'payments' | 'overrides' | 'contacts';
 
 function teamPath(name: Collection | 'settings'): string {
-  return `teams/${TEAM_ID}/${name}`;
+  return `teams/${currentTeamId()}/${name}`;
 }
 
 /** Firestore `undefined` kabul etmez; boş alanlar temizlenir. */

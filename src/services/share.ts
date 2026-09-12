@@ -115,6 +115,44 @@ export async function shareDocument(
   };
 }
 
+/**
+ * Belgeyi paylaşım penceresiyle gönderir — günün planına bağlı olmayan
+ * çıktılar (gider tablosu) için.
+ *
+ * Telefonda dosyayı kaydedip "şimdi nereye kaydetti?" diye aratmak yerine
+ * doğrudan paylaş menüsü açılır: WhatsApp'a dokun, kişiyi seç, gitsin.
+ * Masaüstünde paylaş menüsü yok; orada dosya indirilir.
+ */
+export async function sendDocument(
+  kind: DocumentKind,
+  doc: DocTable,
+  text?: string,
+): Promise<ShareResult> {
+  const generated = await makeDocument(kind, doc);
+
+  if (platformKind() === 'android') {
+    const written = await Filesystem.writeFile({
+      path: generated.fileName,
+      data: await generated.base64(),
+      directory: Directory.Documents,
+      recursive: true,
+    });
+    await Share.share({
+      title: doc.heading,
+      text: text ?? doc.heading,
+      url: written.uri,
+      dialogTitle: 'Nereye gönderilsin?',
+    });
+    return { message: 'Paylaşım penceresi açıldı', path: written.uri };
+  }
+
+  downloadBlob(await generated.blob(), generated.fileName);
+  return {
+    message: `${KIND_LABELS[kind]} indirildi: ${generated.fileName}`,
+    path: generated.fileName,
+  };
+}
+
 /** Belgeyi dosya olarak kaydeder/indirir, paylaşmaz. */
 export async function saveDocument(kind: DocumentKind, doc: DocTable): Promise<ShareResult> {
   const generated = await makeDocument(kind, doc);

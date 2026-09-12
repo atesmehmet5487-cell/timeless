@@ -17,7 +17,7 @@ import {
   type PeriodKind,
 } from '../domain/stats';
 import type { Store } from '../store';
-import { previewExcel, saveDocument } from '../services/share';
+import { sendDocument } from '../services/share';
 import { Button, EmptyState } from './components';
 
 const PERIODS: PeriodKind[] = ['day', 'week', 'month', 'year'];
@@ -150,7 +150,7 @@ export function ReportScreen({
           size="lg"
           full
           disabled={busy}
-          onClick={() => run(() => saveDocument('pdf', doc))}
+          onClick={() => run(() => sendDocument('pdf', doc))}
         >
           📄 PDF
         </Button>
@@ -159,7 +159,7 @@ export function ReportScreen({
           size="lg"
           full
           disabled={busy}
-          onClick={() => run(() => previewExcel(doc))}
+          onClick={() => run(() => sendDocument('excel', doc))}
         >
           📊 Excel
         </Button>

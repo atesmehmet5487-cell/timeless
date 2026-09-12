@@ -257,8 +257,13 @@ export function App() {
         Üst barda metin başlık yok: pencere/sekme adı zaten "Timeless — Ödeme
         Asistanı". Kazanılan yer sekmelere ve hızlı eylem simgelerine gidiyor.
       */}
+      {/*
+        Dar telefonlarda 4 sekme + 3 simge yan yana sığmıyordu ve en sağdaki
+        "gönder" simgesi ekranın dışında kalıyordu. Sekmeler gerekirse yatay
+        kayar; simgeler hiçbir zaman daralmaz.
+      */}
       <header className="safe-top sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-line bg-canvas/90 px-3 py-2.5 backdrop-blur">
-        <nav className="flex gap-0.5 rounded-xl bg-surface-2 p-1 text-xs">
+        <nav className="no-scrollbar flex min-w-0 gap-0.5 overflow-x-auto rounded-xl bg-surface-2 p-1 text-xs">
           {(
             [
               ['today', 'Bugün'],
@@ -270,7 +275,7 @@ export function App() {
             <button
               key={value}
               onClick={() => setTab(value)}
-              className={`rounded-lg px-2.5 py-1.5 font-medium transition ${
+              className={`shrink-0 rounded-lg px-2.5 py-1.5 font-medium transition ${
                 tab === value ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink'
               }`}
             >
@@ -279,7 +284,7 @@ export function App() {
           ))}
         </nav>
 
-        <div className="flex gap-1">
+        <div className="flex shrink-0 gap-1">
           <IconButton
             label="Sesli veya yazılı komut"
             onClick={() => setVoiceOpen(true)}

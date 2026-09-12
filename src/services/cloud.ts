@@ -32,8 +32,20 @@ import {
   type Firestore,
 } from 'firebase/firestore';
 
-/** Tek ekip modeli: bütün kayıtlar bu belgenin altında durur. */
-export const TEAM_ID = 'default';
+/**
+ * Her hesabın kendi alanı.
+ *
+ * Kayıtlar `teams/<kullanıcı kimliği>` altında durur; giriş yapan herkes
+ * yalnızca kendi verisini görür ve kendi cihazları arasında eşitlenir.
+ * Uygulamayı bir başkasına verdiğinde o kişi kendi e-postasıyla açtığı
+ * hesapta kendi listesini tutar — kimse kimsenin kaydını görmez. Güvenlik
+ * kuralları da aynı şeyi söyler: `teamId == request.auth.uid`.
+ */
+export function currentTeamId(): string {
+  const user = cloudAuth().currentUser;
+  if (!user) throw new Error('Bulut verisi için giriş gerekiyor.');
+  return user.uid;
+}
 
 const config = readCloudConfig();
 

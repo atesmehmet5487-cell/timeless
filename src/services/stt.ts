@@ -76,6 +76,18 @@ function startNative(events: SpeechEvents, lang: string): SpeechSession {
 
   void (async () => {
     try {
+      // Bazı telefonlarda (Google uygulaması kapalı/kaldırılmış) tanıma
+      // servisi hiç yoktur. Bunu söylemezsek mikrofona basmak sessizce
+      // hiçbir şey yapmış gibi görünür.
+      const availability = await SpeechRecognition.available();
+      if (availability?.available === false) {
+        events.onError?.(
+          'Bu telefonda konuşma tanıma servisi bulunamadı. Google uygulamasının kurulu ve açık olması gerekiyor — komutu yazabilirsin.',
+        );
+        events.onEnd?.();
+        return;
+      }
+
       const permission = await SpeechRecognition.checkPermissions();
       if (permission.speechRecognition !== 'granted') {
         const asked = await SpeechRecognition.requestPermissions();

@@ -339,8 +339,9 @@ export function SettingsScreen({
               {store.session.displayName || store.session.email}
             </p>
             <p className="mt-1 text-xs text-muted">
-              Kayıtlar ekiple paylaşılıyor. İnternet yokken de çalışır,
-              bağlantı gelince kendiliğinden eşitlenir.
+              Kayıtlar bu hesaba bağlı. Aynı e-postayla girdiğin her cihazda
+              aynı liste görünür. İnternet yokken de çalışır, bağlantı gelince
+              kendiliğinden eşitlenir.
             </p>
             <p className="mt-3 text-xs text-muted">
               Giriş yapmadan önce bu cihaza girdiğin kayıtlar girişte
@@ -376,9 +377,9 @@ export function SettingsScreen({
         ) : (
           <>
             <p className="mb-3 text-xs text-muted">
-              Giriş yaparsan kayıtlar ekiple paylaşılır: biri ödendi
-              işaretlediğinde diğerleri de görür. Şu an kayıtlar yalnızca bu
-              cihazda.
+              Giriş yaparsan kayıtların telefonunla bilgisayarın arasında
+              eşitlenir; hesap sana özeldir, başkası göremez. Şu an kayıtlar
+              yalnızca bu cihazda.
             </p>
             <Button variant="primary" size="sm" onClick={onOpenAuth}>
               Giriş yap / hesap oluştur

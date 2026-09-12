@@ -107,7 +107,7 @@ export function useStore() {
           const denied = (error as { code?: string }).code === 'permission-denied';
           setCloudNotice(
             denied
-              ? `${session.email} ekibe ekli değil. Ekip yöneticisi bu e-postayı izin listesine eklemeli.`
+              ? 'Bulut verisine erişilemedi. Çıkıp yeniden giriş yapmayı dene.'
               : 'Bulut verisine ulaşılamadı; kayıtlar bu cihazdan gösteriliyor.',
           );
           if (denied) {

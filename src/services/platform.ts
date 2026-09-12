@@ -39,8 +39,12 @@ export function getLocalRepository(): Repository {
  */
 export async function getCloudRepository(): Promise<Repository> {
   if (!cloudRepo) {
-    const { FirestoreRepository } = await import('./repo.firestore');
-    cloudRepo = new FirestoreRepository();
+    const [{ FirestoreRepository }, { CloudWithDeviceSettings }] = await Promise.all([
+      import('./repo.firestore'),
+      import('./repo.cloudsettings'),
+    ]);
+    // Tema, renk, bildirim saatleri ve PIN cihazda kalır; kayıtlar bulutta
+    cloudRepo = new CloudWithDeviceSettings(new FirestoreRepository(), getLocalRepository());
   }
   return cloudRepo;
 }

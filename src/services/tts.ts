@@ -1,9 +1,21 @@
 /**
  * Sesli okuma (Türkçe).
- * Web Speech API hem tarayıcıda hem Electron'da hem Android WebView'da çalışır.
+ *
+ * Tarayıcı ve Electron: Web Speech API.
+ * Android: TextToSpeech eklentisi — Android WebView'da `speechSynthesis`
+ *   nesnesi **yoktur**, bu yüzden telefonda web yolu sessizce hiçbir şey
+ *   yapmıyordu. Cihazın kendi TTS servisi eklenti üzerinden çağrılır.
+ *
+ * İki yol da aynı arayüzü sunar; ekranlar hangisinin çalıştığını bilmez.
  */
+import { TextToSpeech } from '@capacitor-community/text-to-speech';
+import { platformKind } from './platform';
 
 let cachedVoice: SpeechSynthesisVoice | null | undefined;
+
+function isAndroid(): boolean {
+  return platformKind() === 'android';
+}
 
 function turkishVoice(): SpeechSynthesisVoice | null {
   if (cachedVoice !== undefined) return cachedVoice;
@@ -17,12 +29,34 @@ function turkishVoice(): SpeechSynthesisVoice | null {
 }
 
 export function isSpeechSynthesisSupported(): boolean {
-  return typeof speechSynthesis !== 'undefined';
+  return isAndroid() || typeof speechSynthesis !== 'undefined';
 }
 
 /** Metni sesli okur. Önceki okuma varsa keser. */
 export function speak(text: string, opts: { rate?: number } = {}): void {
-  if (!isSpeechSynthesisSupported() || !text.trim()) return;
+  if (!text.trim()) return;
+
+  if (isAndroid()) {
+    void (async () => {
+      try {
+        await TextToSpeech.stop();
+        await TextToSpeech.speak({
+          text,
+          lang: 'tr-TR',
+          rate: opts.rate ?? 1,
+          pitch: 1,
+          volume: 1,
+          category: 'playback',
+        });
+      } catch {
+        // Cihazda Türkçe TTS verisi yoksa sessizce geçilir; ekrandaki
+        // yazılı liste zaten aynı bilgiyi veriyor.
+      }
+    })();
+    return;
+  }
+
+  if (typeof speechSynthesis === 'undefined') return;
   speechSynthesis.cancel();
 
   const utterance = new SpeechSynthesisUtterance(text);
@@ -34,12 +68,16 @@ export function speak(text: string, opts: { rate?: number } = {}): void {
 }
 
 export function stopSpeaking(): void {
-  if (isSpeechSynthesisSupported()) speechSynthesis.cancel();
+  if (isAndroid()) {
+    void TextToSpeech.stop().catch(() => undefined);
+    return;
+  }
+  if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
 }
 
 /** Sesler geç yüklenir; hazır olduğunda önbelleği tazeler. */
 export function warmUpVoices(): void {
-  if (!isSpeechSynthesisSupported()) return;
+  if (isAndroid() || typeof speechSynthesis === 'undefined') return;
   cachedVoice = undefined;
   speechSynthesis.getVoices();
   speechSynthesis.addEventListener?.('voiceschanged', () => {

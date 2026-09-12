@@ -2,7 +2,7 @@
  * Bulut girişi.
  *
  * Giriş zorunlu değil: kapatılırsa uygulama cihaz verisiyle çalışmaya devam
- * eder. Giriş yapılınca kayıtlar ekiple paylaşılır.
+ * eder. Giriş yapılınca kayıtlar kişinin kendi cihazları arasında eşitlenir.
  */
 import { useState } from 'react';
 
@@ -80,9 +80,9 @@ export function AuthSheet({
       </div>
 
       <p className="mb-4 text-xs text-muted">
-        Giriş yapan herkes aynı ödeme listesini görür ve düzenler. İnternet
-        yokken de çalışır; bağlantı gelince değişiklikler kendiliğinden
-        eşitlenir.
+        Hesabın sana özel: aynı e-postayla girdiğin telefon ve bilgisayar
+        aynı listeyi gösterir, başkası göremez. İnternet yokken de çalışır;
+        bağlantı gelince değişiklikler kendiliğinden eşitlenir.
       </p>
 
       {tab === 'signUp' && (

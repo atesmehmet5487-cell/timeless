@@ -82,6 +82,15 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Dar ekranda kayan şeritler — kaydırma çubuğu yer kaplamasın */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Telefon çentiği / alt çubuk */
 .safe-top {
   padding-top: env(safe-area-inset-top, 0px);
