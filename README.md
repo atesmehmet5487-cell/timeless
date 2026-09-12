@@ -15,7 +15,7 @@ npm run dist           # Windows kurulum dosyası + taşınabilir sürüm
 npm run lint           # oxlint
 ```
 
-> `npm run dist` çıktıyı `%LOCALAPPDATA%	imeless-release` altına yazar.
+> `npm run dist` çıktıyı `%LOCALAPPDATA%` altındaki `timeless-release` klasörüne yazar.
 > Masaüstü OneDrive tarafından izlendiği için paketleme sırasında dosya
 > kilitleniyor ve derleme "EPERM" ile düşüyordu; çıktı bu yüzden proje dışında.
 
@@ -48,8 +48,9 @@ src/
   services/  Platform adaptörleri (repo, bildirim, ses, PDF, paylaşım)
     cloud.ts        Firebase bağlantısı ve oturum (yalnızca gerekince yüklenir)
     cloudConfig.ts  Bulut ayarlarının okunması (ağır kod içermez)
-    repo.firestore.ts  Bulut deposu — ekip verisi, çevrimdışı önbellekli
-    migrate.ts      İlk girişte cihaz kayıtlarını buluta taşıma
+    repo.firestore.ts  Bulut deposu — hesabın verisi, çevrimdışı önbellekli
+    migrate.ts      Girişte cihazda kalan kayıtları buluta taşıma
+    repo.cloudsettings.ts  Cihaza özel ayarları buluttan ayırır
     pdf.ts          Rapor → A4 yatay PDF (Türkçe karakterler gömülü)
     excel.ts        Rapor → .xlsx (tutarlar gerçek sayı, Excel'de toplanabilir)
     share.ts        WhatsApp / dosya paylaşımı, indirme
@@ -96,25 +97,33 @@ Sıfırdan başka bir proje kurulacaksa adımlar şunlar:
 2. **Authentication** → Sign-in method → **Email/Password** → etkinleştir
 3. **Firestore Database** → veritabanı oluştur
 4. **Firestore → Rules** → `firebase/firestore.rules` içeriğini yapıştır → Publish
-   (içindeki `ekip()` listesine kendi e-postanı yaz, yoksa kimse giremez)
 5. Project settings → Your apps → Web uygulaması ekle → config değerlerini
    `.env` dosyasına yaz (`.env.example` şablonu)
 
-Model **tek ekip**: izin listesindeki herkes aynı ödeme listesini görür ve
-düzenler. Tema, bildirim saatleri ve PIN cihaza özel kalır; ödemeler,
-kategoriler, kişiler ve belge başlığı paylaşılır.
+Model **her hesap kendi verisi**: kayıtlar `teams/<kullanıcı kimliği>` altında
+durur. Aynı e-postayla girdiğin telefon ve bilgisayar aynı listeyi gösterir;
+uygulamayı bir başkasına verirsen o kişi kendi hesabını açar, kendi listesini
+tutar ve kimse kimsenin kaydını göremez.
 
-### Kime açık?
+Bir hesabın içinde bile her şey paylaşılmaz: **tema, renk, bildirim saatleri
+ve PIN cihaza özeldir** (telefonda koyu tema, bilgisayarda açık tema olabilir).
+Ödemeler, kategoriler, kişiler ve belge başlığı hesapla birlikte gezer —
+bu ayrımı `services/repo.cloudsettings.ts` yapar.
+
+### Anahtar gizli değil, kurallar koruyor
 
 Firebase ayarları (apiKey vb.) gizli anahtar değildir: uygulamanın içine
-gömülür, APK dosyasını açan biri okuyabilir. Bu yüzden "giriş yapmış olmak"
-tek başına yetki sayılmaz — veriyi koruyan şey `firebase/firestore.rules`
-içindeki e-posta listesidir.
+gömülür, APK dosyasını açan biri okuyabilir. Sorun değil — anahtar kimseye
+başkasının verisini açmaz. Veriyi koruyan şey `firebase/firestore.rules`
+içindeki tek koşuldur: `request.auth.uid == teamId`. Yani bir kullanıcı
+yalnızca kendi kimliğinin altındaki belgelere erişebilir.
 
-**Ekibe biri eklenecekse:** o dosyadaki `ekip()` listesine e-postasını küçük
-harfle ekle, Firebase panelinde **Firestore → Rules** altına yapıştırıp
-Publish de. Kişi kendi hesabını açtığında veri gelir. Listede olmayan biri
-giriş yaparsa uygulama "ekibe ekli değil" deyip oturumu kapatır.
+### Cihazda kalan kayıtlar
+
+Giriş yapmadan önce o cihaza girilen kayıtlar, girişte **bulutta olmayanlar**
+seçilerek yukarı taşınır (`services/migrate.ts`); buluttakinin üzerine
+yazılmaz. Bir şey eksik kalırsa Ayarlar'daki "Bu cihazdaki kayıtları buluta
+yükle" düğmesi aynı işi elle yapar.
 
 ## Durum
 
@@ -129,8 +138,9 @@ giriş yaparsa uygulama "ekibe ekli değil" deyip oturumu kapatır.
 - [x] Kategoriler — "cari" dahil yerleşikler + kullanıcının kendi kategorileri
 - [x] IBAN — kayıt başına isteğe bağlı hesap numarası
 - [x] Faz 6 — Yedekleme/geri yükleme, geçmiş temizliği, PIN kilidi,
-      mükerrer kayıt uyarısı (165 birim test)
-- [~] Faz 7 — Windows kurulum dosyası hazır; Android APK için Android Studio
-      kurulumu ya da bulut derleme gerekiyor
+      mükerrer kayıt uyarısı (171 birim test)
+- [x] Faz 7 — Windows sürümü ve Android APK üretiliyor (APK GitHub Actions ile
+      bulutta derleniyor: .github/workflows/android.yml)
+- [x] Bulut — Firebase ile hesap başına eşitleme, çevrimdışı çalışma
 - [x] Tema seçenekleri — açık/koyu/cihaz + 6 renk
 
