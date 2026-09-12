@@ -1,0 +1,59 @@
+# Android APK'yı bulutta derler.
+#
+# Yerel makineye Android Studio ya da SDK kurmak gerekmez: GitHub'ın
+# ubuntu çalıştırıcısında JDK ve Android SDK hazır gelir. Derleme bitince
+# APK, çalıştırmanın "Artifacts" bölümünden indirilir.
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+  # Elle de başlatılabilsin
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: JDK 21 kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Android SDK kur
+        uses: android-actions/setup-android@v3
+
+      - name: Paketleri yükle
+        run: npm ci
+
+      - name: Testler
+        run: npm test
+
+      - name: Web tarafını derle
+        run: npm run build
+
+      - name: Capacitor'ı eşitle
+        run: npx cap sync android
+
+      - name: APK derle (debug)
+        working-directory: android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: APK'yı yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: timeless-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

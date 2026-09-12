@@ -1,0 +1,208 @@
+/*
+ * Tasarım: üstte kompakt ay takvimi, altında o günün listesi.
+ * Açık tema esas; cihaz koyu temadaysa değişkenler koyuya döner.
+ * Font uygulamayla birlikte paketlenir — APK ve masaüstü çevrimdışı çalışır.
+ */
+@import '@fontsource-variable/inter';
+@import 'tailwindcss';
+
+@theme {
+  /* Yüzeyler */
+  --color-canvas: #f4f5f7;
+  --color-surface: #ffffff;
+  --color-surface-2: #f0f2f5;
+  --color-line: #e3e6ea;
+
+  /* Metin */
+  --color-ink: #131720;
+  --color-ink-soft: #5b6472;
+  --color-muted: #8a93a2;
+
+  /* Anlam renkleri */
+  --color-accent: #2f6bff;
+  --color-accent-soft: #e8efff;
+  --color-ok: #12a150;
+  --color-ok-soft: #e4f6ec;
+  --color-warn: #c47a05;
+  --color-warn-soft: #fdf1dc;
+  --color-danger: #d92d20;
+  --color-danger-soft: #fdeceb;
+
+  --font-sans: 'Inter Variable', 'Segoe UI', system-ui, sans-serif;
+  --radius-card: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-canvas: #0e1116;
+    --color-surface: #171b22;
+    --color-surface-2: #1f242d;
+    --color-line: #2a3039;
+
+    --color-ink: #eef1f6;
+    --color-ink-soft: #a9b2c0;
+    --color-muted: #79828f;
+
+    --color-accent: #5b8cff;
+    --color-accent-soft: #1c2740;
+    --color-ok: #35c07a;
+    --color-ok-soft: #142a1f;
+    --color-warn: #e0a33a;
+    --color-warn-soft: #2c2314;
+    --color-danger: #f87171;
+    --color-danger-soft: #2e1a1a;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: 'cv05', 'ss01';
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+/* Çerçevesiz masaüstü penceresinde sürükleme bölgeleri */
+.drag-region {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Tutarlar hizalı dursun */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Telefon çentiği / alt çubuk */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Odak halkası — klavyeyle gezerken görünür, faryeyle değil */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Tema seçenekleri
+ *
+ * Açık/koyu: data-theme="light" | "dark"; yoksa cihaz ayarı geçerli.
+ * Renk: data-accent="mavi" | "yesil" | ...
+ *
+ * Sıra önemli: önce yüzey renkleri (tema), sonra vurgu rengi (accent).
+ * İkisi aynı özgüllükte olduğu için accent blokları en sonda durmalı,
+ * aksi hâlde tema bloğu seçilen rengi eziyor.
+ * ------------------------------------------------------------------ */
+
+/* Elle koyu seçilirse */
+:root[data-theme='dark'] {
+  --color-canvas: #0e1116;
+  --color-surface: #171b22;
+  --color-surface-2: #1f242d;
+  --color-line: #2a3039;
+  --color-ink: #eef1f6;
+  --color-ink-soft: #a9b2c0;
+  --color-muted: #79828f;
+  --color-ok: #35c07a;
+  --color-ok-soft: #142a1f;
+  --color-warn: #e0a33a;
+  --color-warn-soft: #2c2314;
+  --color-danger: #f87171;
+  --color-danger-soft: #2e1a1a;
+}
+
+/* Elle açık seçilirse — cihaz koyu olsa bile açık kalsın */
+:root[data-theme='light'] {
+  --color-canvas: #f4f5f7;
+  --color-surface: #ffffff;
+  --color-surface-2: #f0f2f5;
+  --color-line: #e3e6ea;
+  --color-ink: #131720;
+  --color-ink-soft: #5b6472;
+  --color-muted: #8a93a2;
+  --color-ok: #12a150;
+  --color-ok-soft: #e4f6ec;
+  --color-warn: #c47a05;
+  --color-warn-soft: #fdf1dc;
+  --color-danger: #d92d20;
+  --color-danger-soft: #fdeceb;
+}
+
+/* Vurgu renkleri — açık zemin tonları */
+:root[data-accent='mavi'] {
+  --color-accent: #2f6bff;
+}
+:root[data-accent='yesil'] {
+  --color-accent: #12a150;
+}
+:root[data-accent='mor'] {
+  --color-accent: #7c5cff;
+}
+:root[data-accent='turuncu'] {
+  --color-accent: #ef7611;
+}
+:root[data-accent='turkuaz'] {
+  --color-accent: #0d9488;
+}
+:root[data-accent='kiraz'] {
+  --color-accent: #e11d48;
+}
+
+/* Koyu zeminde aynı renkler açılır, okunaklı kalsın diye */
+@media (prefers-color-scheme: dark) {
+  :root[data-accent='mavi']:not([data-theme='light']) {
+    --color-accent: #5b8cff;
+  }
+  :root[data-accent='yesil']:not([data-theme='light']) {
+    --color-accent: #35c07a;
+  }
+  :root[data-accent='mor']:not([data-theme='light']) {
+    --color-accent: #a78bfa;
+  }
+  :root[data-accent='turuncu']:not([data-theme='light']) {
+    --color-accent: #fb923c;
+  }
+  :root[data-accent='turkuaz']:not([data-theme='light']) {
+    --color-accent: #2dd4bf;
+  }
+  :root[data-accent='kiraz']:not([data-theme='light']) {
+    --color-accent: #fb7185;
+  }
+}
+
+:root[data-theme='dark'][data-accent='mavi'] {
+  --color-accent: #5b8cff;
+}
+:root[data-theme='dark'][data-accent='yesil'] {
+  --color-accent: #35c07a;
+}
+:root[data-theme='dark'][data-accent='mor'] {
+  --color-accent: #a78bfa;
+}
+:root[data-theme='dark'][data-accent='turuncu'] {
+  --color-accent: #fb923c;
+}
+:root[data-theme='dark'][data-accent='turkuaz'] {
+  --color-accent: #2dd4bf;
+}
+:root[data-theme='dark'][data-accent='kiraz'] {
+  --color-accent: #fb7185;
+}
+
+/* Vurgunun açık tonu renkten türetilir; her temada doğru tonu alır. */
+:root {
+  --color-accent-soft: color-mix(in srgb, var(--color-accent) 13%, var(--color-canvas));
+}
