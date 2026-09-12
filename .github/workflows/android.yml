@@ -41,19 +41,19 @@ jobs:
 
       - name: Web tarafını derle
         run: npm run build
-        # Firebase web ayarları gizli anahtar değildir: uygulamanın içine
-        # gömülür, APK'yı açan herkes görebilir. Veriyi koruyan şey
-        # firebase/firestore.rules içindeki e-posta izin listesidir.
-        # Başka bir Firebase projesine geçilirse GitHub'da "Secrets and
-        # variables → Actions" altına aynı isimlerle secret eklemek yeter;
-        # secret varsa aşağıdaki değerlerin yerine o kullanılır.
+        # Bulut ayarları depoda durmaz; GitHub'da "Secrets and variables →
+        # Actions" altında tutulur. (Firebase web anahtarı aslında gizli bir
+        # sır değildir, uygulamanın içine gömülür; veriyi koruyan şey
+        # firebase/firestore.rules içindeki e-posta izin listesidir. Yine de
+        # depoda tutmuyoruz ki GitHub'ın tarayıcısı uyarı yağdırmasın.)
+        # Secret girilmezse APK yalnızca cihaz verisiyle çalışır.
         env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY || 'AIzaSyBB7HYtBBY2a49FZqBQnSCCFgAs9PfmCWg' }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN || 'timeless-9765d.firebaseapp.com' }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID || 'timeless-9765d' }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID || '1:531694982323:web:95dc738f1eee2f9336ccc6' }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET || 'timeless-9765d.firebasestorage.app' }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID || '531694982323' }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
 
       - name: Capacitor'ı eşitle
         run: npx cap sync android

@@ -87,7 +87,8 @@ electron/    Windows kabuğu: pencere, tepsi, JSON deposu, arka plan zamanlayıc
 
 Bu depoda bulut **kurulu**: `timeless-9765d` Firebase projesi, Avrupa (eur3)
 bölgesinde. Masaüstü derlemesi ayarları `.env` dosyasından, APK ise
-`.github/workflows/android.yml` içindeki değerlerden alır.
+GitHub'daki **Secrets** kayıtlarından alır (Settings → Secrets and variables →
+Actions; `VITE_FIREBASE_*` adlarıyla).
 
 Sıfırdan başka bir proje kurulacaksa adımlar şunlar:
 
