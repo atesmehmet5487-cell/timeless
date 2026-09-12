@@ -61,17 +61,27 @@ export interface SpeechSession {
 
 /**
  * Android tarafı: izin istenir, dinleme başlar, ara sonuçlar aktarılır.
- * Eklenti sonucu dizi olarak verir; ilk seçenek en olasıdır.
+ *
+ * Dikkat — eklentinin can alıcı ayrıntısı: `partialResults: true` verilince
+ * `start()` **sonucu beklemeden hemen döner**. Önceki sürüm bu boş cevabı
+ * "dinleme bitti, sonuç yok" sayıp oturumu kapatıyordu; kullanıcı konuşuyor,
+ * hiçbir şey olmuyor, hata da çıkmıyordu. Bitişi artık eklentinin
+ * `listeningState: stopped` olayı belirliyor, metin de son ara sonuçtan
+ * geliyor.
  */
 function startNative(events: SpeechEvents, lang: string): SpeechSession {
   let cancelled = false;
   let finished = false;
+  /** Son ara sonuç — dinleme bitince kullanılacak metin. */
+  let latest = '';
 
   const finish = (text: string) => {
     if (finished || cancelled) return;
     finished = true;
     events.onEnd?.();
-    if (text.trim()) events.onResult(text.trim());
+    const clean = text.trim();
+    if (clean) events.onResult(clean);
+    else events.onError?.('Ses alınamadı, tekrar dener misin?');
   };
 
   void (async () => {
@@ -92,7 +102,9 @@ function startNative(events: SpeechEvents, lang: string): SpeechSession {
       if (permission.speechRecognition !== 'granted') {
         const asked = await SpeechRecognition.requestPermissions();
         if (asked.speechRecognition !== 'granted') {
-          events.onError?.('Mikrofon izni verilmedi.');
+          events.onError?.(
+            'Mikrofon izni verilmedi. Ayarlar → Uygulamalar → Timeless → İzinler → Mikrofon.',
+          );
           events.onEnd?.();
           return;
         }
@@ -100,7 +112,16 @@ function startNative(events: SpeechEvents, lang: string): SpeechSession {
 
       await SpeechRecognition.addListener('partialResults', (data: { matches: string[] }) => {
         const text = data.matches?.[0];
-        if (text) events.onPartial?.(text);
+        if (text) {
+          latest = text;
+          events.onPartial?.(text);
+        }
+      });
+
+      // Dinlemenin bittiğini eklenti haber verir: kullanıcı sustu, durdurdu
+      // ya da tanıma kendiliğinden kapandı.
+      await SpeechRecognition.addListener('listeningState', (data: { status: string }) => {
+        if (data.status === 'stopped') finish(latest);
       });
 
       const result = await SpeechRecognition.start({
@@ -108,21 +129,33 @@ function startNative(events: SpeechEvents, lang: string): SpeechSession {
         maxResults: 1,
         partialResults: true,
         popup: false,
+        prompt: 'Ödeme komutunu söyle',
       });
-      finish(result?.matches?.[0] ?? '');
+
+      // partialResults kapalıyken sonuç burada gelir; açıkken boş döner
+      const direct = result?.matches?.[0];
+      if (direct) {
+        latest = direct;
+        finish(direct);
+      }
     } catch (error) {
       events.onError?.(error instanceof Error ? error.message : 'Ses tanınamadı.');
       events.onEnd?.();
-    } finally {
-      void SpeechRecognition.removeAllListeners();
     }
   })();
 
   return {
-    stop: () => void SpeechRecognition.stop(),
+    stop: () => {
+      // Kullanıcı "dur" dedi: o ana kadar anlaşılan metni kullan
+      void SpeechRecognition.stop()
+        .catch(() => undefined)
+        .then(() => finish(latest));
+      void SpeechRecognition.removeAllListeners();
+    },
     cancel: () => {
       cancelled = true;
-      void SpeechRecognition.stop();
+      void SpeechRecognition.stop().catch(() => undefined);
+      void SpeechRecognition.removeAllListeners();
     },
   };
 }
