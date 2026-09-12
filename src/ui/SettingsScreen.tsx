@@ -67,7 +67,8 @@ export function SettingsScreen({ store, onToast }: { store: Store; onToast: (m: 
   ];
 
   return (
-    <div className="space-y-6">
+    // Masaüstünde ayarlar iki sütuna yayılır; telefonda tek sütun kalır
+    <div className="space-y-6 lg:columns-2 lg:gap-6 lg:space-y-0 [&>section]:lg:mb-6 [&>section]:lg:break-inside-avoid">
       {/* Görünüm */}
       <section className="rounded-card border border-line bg-surface p-4">
         <h3 className="mb-3 font-semibold">Görünüm</h3>

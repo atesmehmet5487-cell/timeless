@@ -92,6 +92,7 @@ export function ReportScreen({
         </Button>
       </div>
 
+      <div className="space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
       {/* Toplam */}
       <section className="rounded-card border border-line bg-surface p-4">
         <p className="text-xs text-muted">Dönem gideri</p>
@@ -139,6 +140,8 @@ export function ReportScreen({
           hint="Başka bir döneme geçebilir ya da yeni ödeme ekleyebilirsin."
         />
       )}
+
+      </div>
 
       {/* Çıktılar — ödeme planıyla aynı yeşil başlıklı tablo düzeni */}
       <div className="flex gap-2">

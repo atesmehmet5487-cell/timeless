@@ -14,8 +14,24 @@ import {
   shell,
   Tray,
 } from 'electron';
+import { appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { read, update, write, type Database } from './store';
+
+/**
+ * Paketlenmiş sürümde konsol görünmediği için günlük dosyaya yazılır:
+ * %APPDATA%/timeless/timeless.log
+ */
+function log(message: string): void {
+  const line = `[${new Date().toISOString()}] ${message}
+`;
+  try {
+    appendFileSync(join(app.getPath('userData'), 'timeless.log'), line);
+  } catch {
+    /* günlük yazılamadıysa sessiz geç */
+  }
+  if (!app.isPackaged) console.log(message.trim());
+}
 
 /** Renderer'dan gelen, gösterilmeyi bekleyen hatırlatma. */
 interface Reminder {
@@ -129,9 +145,9 @@ function createTray(): void {
 
 function createWindow(): void {
   win = new BrowserWindow({
-    width: 480,
-    height: 860,
-    minWidth: 380,
+    width: 1120,
+    height: 760,
+    minWidth: 420,
     minHeight: 560,
     backgroundColor: '#0f1115',
     autoHideMenuBar: true,
@@ -145,8 +161,22 @@ function createWindow(): void {
     },
   });
 
-  if (isDev) void win.loadURL(DEV_URL);
-  else void win.loadFile(join(__dirname, '../dist/index.html'));
+  const indexPath = join(__dirname, '../dist/index.html');
+  log(`pencere kuruldu — ${isDev ? DEV_URL : indexPath}`);
+
+  win.webContents.on('did-fail-load', (_e, code, description, url) => {
+    log(`YÜKLENEMEDİ (${code}) ${description} — ${url}`);
+  });
+  win.webContents.on('render-process-gone', (_e, details) => {
+    log(`RENDERER ÇÖKTÜ: ${details.reason}`);
+  });
+  win.once('ready-to-show', () => {
+    log('pencere gösterilmeye hazır');
+    win?.show();
+  });
+
+  if (isDev) void win.loadURL(DEV_URL).catch((error) => log(`loadURL hatası: ${String(error)}`));
+  else void win.loadFile(indexPath).catch((error) => log(`loadFile hatası: ${String(error)}`));
 
   // Pencereyi kapatmak uygulamayı kapatmaz — zamanlayıcı tepside sürer
   win.on('close', (event) => {
@@ -226,7 +256,10 @@ if (!single) {
 } else {
   app.on('second-instance', showWindow);
 
+  process.on('uncaughtException', (error) => log(`YAKALANMAYAN HATA: ${String(error)}`));
+
   void app.whenReady().then(() => {
+    log(`uygulama hazır — paketli: ${app.isPackaged}`);
     app.setAppUserModelId('com.timeless.app');
     registerIpc();
     createWindow();

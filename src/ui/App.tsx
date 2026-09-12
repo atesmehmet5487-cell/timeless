@@ -238,7 +238,11 @@ export function App() {
   return (
     <div className="flex h-full flex-col">
       <TitleBar />
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col overflow-hidden">
+      {/*
+        Telefonda tek sütun (APK görünümü korunur), masaüstünde geniş ekran
+        iki sütuna açılır. Kırılma noktası 1024px.
+      */}
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col overflow-hidden lg:max-w-6xl">
       {/*
         Üst barda metin başlık yok: pencere/sekme adı zaten "Timeless — Ödeme
         Asistanı". Kazanılan yer sekmelere ve hızlı eylem simgelerine gidiyor.
@@ -309,10 +313,13 @@ export function App() {
         {tab === 'settings' && <SettingsScreen store={store} onToast={show} />}
       </main>
 
+      {/* Geniş ekranda düğme tüm genişliği kaplamasın */}
       <div className="safe-bottom border-t border-line bg-surface/90 px-4 py-3 backdrop-blur">
-        <Button variant="primary" size="lg" full onClick={openNew}>
-          + Ödeme ekle
-        </Button>
+        <div className="mx-auto lg:max-w-sm">
+          <Button variant="primary" size="lg" full onClick={openNew}>
+            + Ödeme ekle
+          </Button>
+        </div>
       </div>
 
       {sheet && (

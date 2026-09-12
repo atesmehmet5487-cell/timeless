@@ -63,7 +63,9 @@ export function TodayScreen({
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 lg:grid lg:grid-cols-[360px_1fr] lg:items-start lg:gap-6 lg:space-y-0">
+      {/* Sol sütun: takvim (masaüstünde sabit genişlik) */}
+      <div className="lg:sticky lg:top-2">
       <MonthCalendar
         month={month}
         selected={date}
@@ -72,7 +74,10 @@ export function TodayScreen({
         onSelect={onChangeDate}
         onMonthChange={onChangeMonth}
       />
+      </div>
 
+      {/* Sağ sütun: seçili günün listesi */}
+      <div className="space-y-4">
       {/* Seçili günün başlığı */}
       <div className="flex items-end justify-between gap-3 px-1">
         <div>
@@ -140,6 +145,7 @@ export function TodayScreen({
           + {D.formatShortTR(date)} için ödeme ekle
         </button>
       )}
+      </div>
     </div>
   );
 }
