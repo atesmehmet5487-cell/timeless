@@ -85,18 +85,35 @@ electron/    Windows kabuğu: pencere, tepsi, JSON deposu, arka plan zamanlayıc
 
 ## Bulut (isteğe bağlı)
 
-Uygulama yapılandırma olmadan yalnızca cihazda çalışır. Ekiple paylaşım için:
+Bu depoda bulut **kurulu**: `timeless-9765d` Firebase projesi, Avrupa (eur3)
+bölgesinde. Masaüstü derlemesi ayarları `.env` dosyasından, APK ise
+`.github/workflows/android.yml` içindeki değerlerden alır.
+
+Sıfırdan başka bir proje kurulacaksa adımlar şunlar:
 
 1. `console.firebase.google.com` → yeni proje
 2. **Authentication** → Sign-in method → **Email/Password** → etkinleştir
 3. **Firestore Database** → veritabanı oluştur
 4. **Firestore → Rules** → `firebase/firestore.rules` içeriğini yapıştır → Publish
+   (içindeki `ekip()` listesine kendi e-postanı yaz, yoksa kimse giremez)
 5. Project settings → Your apps → Web uygulaması ekle → config değerlerini
    `.env` dosyasına yaz (`.env.example` şablonu)
 
-Model **tek ekip**: giriş yapan herkes aynı ödeme listesini görür ve düzenler.
-Tema, bildirim saatleri ve PIN cihaza özel kalır; ödemeler, kategoriler,
-kişiler ve belge başlığı paylaşılır.
+Model **tek ekip**: izin listesindeki herkes aynı ödeme listesini görür ve
+düzenler. Tema, bildirim saatleri ve PIN cihaza özel kalır; ödemeler,
+kategoriler, kişiler ve belge başlığı paylaşılır.
+
+### Kime açık?
+
+Firebase ayarları (apiKey vb.) gizli anahtar değildir: uygulamanın içine
+gömülür, APK dosyasını açan biri okuyabilir. Bu yüzden "giriş yapmış olmak"
+tek başına yetki sayılmaz — veriyi koruyan şey `firebase/firestore.rules`
+içindeki e-posta listesidir.
+
+**Ekibe biri eklenecekse:** o dosyadaki `ekip()` listesine e-postasını küçük
+harfle ekle, Firebase panelinde **Firestore → Rules** altına yapıştırıp
+Publish de. Kişi kendi hesabını açtığında veri gelir. Listede olmayan biri
+giriş yaparsa uygulama "ekibe ekli değil" deyip oturumu kapatır.
 
 ## Durum
 

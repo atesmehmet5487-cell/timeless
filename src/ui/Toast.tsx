@@ -5,11 +5,12 @@ export function useToast(duration = 3000) {
   const [toast, setToast] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  /** Okunması vakit alan uyarılar için süre uzatılabilir. */
   const show = useCallback(
-    (message: string) => {
+    (message: string, ms = duration) => {
       setToast(message);
       if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(() => setToast(null), duration);
+      timer.current = setTimeout(() => setToast(null), ms);
     },
     [duration],
   );

@@ -5,27 +5,44 @@ rules_version = '2';
 // Firebase panelinde: Firestore Database → Rules → bu dosyanın içeriğini
 // yapıştır → Publish.
 //
-// Model "tek ekip": giriş yapmış herkes aynı ödeme kayıtlarını okur ve
-// düzenler. Giriş yapmamış birinin hiçbir veriye erişimi yoktur.
+// Model "tek ekip": izin listesindeki herkes aynı ödeme kayıtlarını okur ve
+// düzenler. Başka kimsenin hiçbir veriye erişimi yoktur.
+//
+// NEDEN İZİN LİSTESİ: Firebase ayarları (apiKey vb.) uygulamanın içine
+// gömülür; APK'yı eline geçiren biri bunları okuyabilir. Yalnızca "giriş
+// yapmış olmak" yetseydi, herhangi biri kendine hesap açıp maaş ve borç
+// tutarlarını görebilirdi. Veriyi asıl koruyan aşağıdaki liste.
+//
+// YENİ KİŞİ EKLEMEK: ekip() içindeki listeye e-postasını küçük harfle
+// ekle → Publish. Kişi kendi hesabını açtıktan sonra veriyi görür.
 //
 // Varsayılan olarak her şey kapalı; yalnızca aşağıdaki yollar açılır.
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function signedIn() {
-      return request.auth != null;
+    // Ekibe dahil e-postalar — hepsi küçük harf
+    function ekip() {
+      return [
+        'atesmehmet5487@gmail.com'
+      ];
+    }
+
+    function uye() {
+      return request.auth != null
+          && request.auth.token.email != null
+          && request.auth.token.email.lower() in ekip();
     }
 
     // Ekip verisi: ödemeler, müdahaleler, kişiler, ortak ayarlar
     match /teams/{teamId}/{collection}/{docId} {
-      allow read, write: if signedIn();
+      allow read, write: if uye();
     }
 
-    // Ekip üyeleri: herkes listeyi görür (kim ekledi bilgisi için),
+    // Ekip üyeleri: ekiptekiler listeyi görür (kim ekledi bilgisi için),
     // ama yalnızca kendi satırını yazabilir.
     match /members/{uid} {
-      allow read: if signedIn();
-      allow write: if signedIn() && request.auth.uid == uid;
+      allow read: if uye();
+      allow write: if uye() && request.auth.uid == uid;
     }
 
     // Yukarıda açıkça izin verilmeyen her şey kapalı

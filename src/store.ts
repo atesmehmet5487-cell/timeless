@@ -85,15 +85,32 @@ export function useStore() {
     let cancelled = false;
     (async () => {
       if (session) {
-        const cloud = await getCloudRepository();
-        await cloud.init();
-        const result = await migrateLocalToCloud(getLocalRepository(), cloud);
-        if (cancelled) return;
-        if (result.moved) {
-          setCloudNotice(`${result.payments} kayıt buluta taşındı`);
+        try {
+          const cloud = await getCloudRepository();
+          await cloud.init();
+          const result = await migrateLocalToCloud(getLocalRepository(), cloud);
+          if (cancelled) return;
+          if (result.moved) {
+            setCloudNotice(`${result.payments} kayıt buluta taşındı`);
+          }
+          setRepo(cloud);
+          setMode('cloud');
+        } catch (error) {
+          // En olası sebep: e-posta güvenlik kurallarındaki ekip listesinde
+          // değil. Sessizce yerelde kalmak yerine söyleyip oturumu kapatıyoruz;
+          // yoksa "giriş yaptım ama veri gelmiyor" gibi görünür.
+          if (cancelled) return;
+          const denied = (error as { code?: string }).code === 'permission-denied';
+          setCloudNotice(
+            denied
+              ? `${session.email} ekibe ekli değil. Ekip yöneticisi bu e-postayı izin listesine eklemeli.`
+              : 'Bulut verisine ulaşılamadı; kayıtlar bu cihazdan gösteriliyor.',
+          );
+          if (denied) {
+            const { signOutCloud } = await import('./services/cloud');
+            await signOutCloud();
+          }
         }
-        setRepo(cloud);
-        setMode('cloud');
       } else {
         setRepo(getLocalRepository());
         setMode('local');

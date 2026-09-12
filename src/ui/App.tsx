@@ -80,7 +80,8 @@ export function App() {
   // İlk girişte cihaz kayıtları buluta taşındıysa kullanıcıya söyle
   useEffect(() => {
     if (!store.cloudNotice) return;
-    show(store.cloudNotice);
+    // Bulut uyarıları uzun olabiliyor; okunacak kadar dursun
+    show(store.cloudNotice, 8000);
     store.dismissCloudNotice();
   }, [store.cloudNotice, store, show]);
 
