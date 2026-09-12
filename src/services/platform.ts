@@ -19,14 +19,33 @@ export function platformKind(): PlatformKind {
   return 'web';
 }
 
-let repo: Repository | null = null;
+let localRepo: Repository | null = null;
+let cloudRepo: Repository | null = null;
 
-/** Uygulama ömrü boyunca tek depo örneği. */
-export function getRepository(): Repository {
-  if (!repo) {
-    // Windows'ta veri main process'teki JSON dosyasında tutulur; bildirim
-    // zamanlayıcısının pencere kapalıyken de okuyabilmesi gerekiyor.
-    repo = platformKind() === 'electron' ? new ElectronRepository() : new DexieRepository();
+/**
+ * Cihazdaki depo: Windows'ta main process'teki JSON dosyası (bildirim
+ * zamanlayıcısı pencere kapalıyken de okumalı), diğer yerlerde IndexedDB.
+ */
+export function getLocalRepository(): Repository {
+  if (!localRepo) {
+    localRepo = platformKind() === 'electron' ? new ElectronRepository() : new DexieRepository();
   }
-  return repo;
+  return localRepo;
+}
+
+/**
+ * Bulut deposu. Firestore kodu yalnızca giriş yapıldığında yüklenir; bulut
+ * yapılandırılmamış derlemelerde bu işlev hiç çağrılmaz.
+ */
+export async function getCloudRepository(): Promise<Repository> {
+  if (!cloudRepo) {
+    const { FirestoreRepository } = await import('./repo.firestore');
+    cloudRepo = new FirestoreRepository();
+  }
+  return cloudRepo;
+}
+
+/** Geriye dönük uyumluluk: bulut yoksa kullanılan depo. */
+export function getRepository(): Repository {
+  return getLocalRepository();
 }

@@ -8,6 +8,7 @@ import { registerNotificationActions } from '../services/notify';
 import { speak, stopSpeaking, warmUpVoices } from '../services/tts';
 import { useStore } from '../store';
 import { Button, Sheet } from './components';
+import { AuthSheet } from './AuthSheet';
 import { DeferSheet } from './DeferSheet';
 import { LockScreen } from './LockScreen';
 import { PaymentsScreen } from './PaymentsScreen';
@@ -66,6 +67,7 @@ export function App() {
   const [paymentChooser, setPaymentChooser] = useState<Payment[] | null>(null);
   /** Mükerrer uyarısı gösterilen kayıt — ikinci kaydet onay sayılır. */
   const [pendingDuplicate, setPendingDuplicate] = useState<string | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareDate, setShareDate] = useState<ISODate>(D.today());
   const [contactsOpen, setContactsOpen] = useState(false);
@@ -74,6 +76,13 @@ export function App() {
   const [unlocked, setUnlocked] = useState(false);
 
   useEffect(() => warmUpVoices(), []);
+
+  // İlk girişte cihaz kayıtları buluta taşındıysa kullanıcıya söyle
+  useEffect(() => {
+    if (!store.cloudNotice) return;
+    show(store.cloudNotice);
+    store.dismissCloudNotice();
+  }, [store.cloudNotice, store, show]);
 
   // Tema seçimi belgeye uygulanır; CSS değişkenleri buradan okunur
   useEffect(() => {
@@ -310,7 +319,9 @@ export function App() {
         )}
         {tab === 'payments' && <PaymentsScreen store={store} onEdit={openEdit} />}
         {tab === 'report' && <ReportScreen store={store} onResult={show} />}
-        {tab === 'settings' && <SettingsScreen store={store} onToast={show} />}
+        {tab === 'settings' && (
+          <SettingsScreen store={store} onToast={show} onOpenAuth={() => setAuthOpen(true)} />
+        )}
       </main>
 
       {/* Geniş ekranda düğme tüm genişliği kaplamasın */}
@@ -428,6 +439,8 @@ export function App() {
           ))}
         </div>
       </Sheet>
+
+      <AuthSheet open={authOpen} onClose={() => setAuthOpen(false)} onResult={show} />
 
       <ShareSheet
         open={shareOpen}

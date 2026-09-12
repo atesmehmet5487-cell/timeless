@@ -24,7 +24,15 @@ import { CleanupSection } from './CleanupSection';
 import { Button, Field, inputClass } from './components';
 import { Checkbox } from './OccurrenceRow';
 
-export function SettingsScreen({ store, onToast }: { store: Store; onToast: (m: string) => void }) {
+export function SettingsScreen({
+  store,
+  onToast,
+  onOpenAuth,
+}: {
+  store: Store;
+  onToast: (m: string) => void;
+  onOpenAuth: () => void;
+}) {
   const [permission, setPermission] = useState<PermissionState>('default');
   /**
    * Metin alanı doğrudan depoya yazarsa her tuş vuruşu bir kaydet+yeniden oku
@@ -312,6 +320,53 @@ export function SettingsScreen({ store, onToast }: { store: Store; onToast: (m: 
             <option value="skip">O ay atlansın</option>
           </select>
         </Field>
+      </section>
+
+      {/* Bulut hesabı */}
+      <section className="rounded-card border border-line bg-surface p-4">
+        <h3 className="mb-1 font-semibold">Bulut ve paylaşım</h3>
+
+        {!store.cloudConfigured ? (
+          <p className="text-xs text-muted">
+            Bu sürümde bulut yapılandırılmadı; kayıtlar yalnızca bu cihazda
+            tutuluyor. Ekiple paylaşmak için uygulamanın bulut ayarları
+            girilmiş bir sürümü gerekiyor.
+          </p>
+        ) : store.session ? (
+          <>
+            <p className="text-xs text-muted">
+              <span className="font-medium text-ok">Bağlı</span> ·{' '}
+              {store.session.displayName || store.session.email}
+            </p>
+            <p className="mt-1 text-xs text-muted">
+              Kayıtlar ekiple paylaşılıyor. İnternet yokken de çalışır,
+              bağlantı gelince kendiliğinden eşitlenir.
+            </p>
+            <div className="mt-3">
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={async () => {
+                  await store.signOut();
+                  onToast('Çıkış yapıldı — kayıtlar yalnızca bu cihazdan okunuyor');
+                }}
+              >
+                Çıkış yap
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="mb-3 text-xs text-muted">
+              Giriş yaparsan kayıtlar ekiple paylaşılır: biri ödendi
+              işaretlediğinde diğerleri de görür. Şu an kayıtlar yalnızca bu
+              cihazda.
+            </p>
+            <Button variant="primary" size="sm" onClick={onOpenAuth}>
+              Giriş yap / hesap oluştur
+            </Button>
+          </>
+        )}
       </section>
 
       {/* Kilit */}

@@ -46,6 +46,10 @@ src/
     parse.ts        Giriş noktası
     commands.ts     Ayrıştırma sonucu → uygulanabilir eylem
   services/  Platform adaptörleri (repo, bildirim, ses, PDF, paylaşım)
+    cloud.ts        Firebase bağlantısı ve oturum (yalnızca gerekince yüklenir)
+    cloudConfig.ts  Bulut ayarlarının okunması (ağır kod içermez)
+    repo.firestore.ts  Bulut deposu — ekip verisi, çevrimdışı önbellekli
+    migrate.ts      İlk girişte cihaz kayıtlarını buluta taşıma
     pdf.ts          Rapor → A4 yatay PDF (Türkçe karakterler gömülü)
     excel.ts        Rapor → .xlsx (tutarlar gerçek sayı, Excel'de toplanabilir)
     share.ts        WhatsApp / dosya paylaşımı, indirme
@@ -78,6 +82,21 @@ electron/    Windows kabuğu: pencere, tepsi, JSON deposu, arka plan zamanlayıc
    için PDF indirilir, WhatsApp hazır metinle açılır — bu sınır arayüzde yazılı.
 7. **Hiçbir komut sessizce uygulanmaz.** Sesli/yazılı komut önce ayrıştırılır,
    ne anlaşıldığı onay ekranında gösterilir, uygulama kararı kullanıcınındır.
+
+## Bulut (isteğe bağlı)
+
+Uygulama yapılandırma olmadan yalnızca cihazda çalışır. Ekiple paylaşım için:
+
+1. `console.firebase.google.com` → yeni proje
+2. **Authentication** → Sign-in method → **Email/Password** → etkinleştir
+3. **Firestore Database** → veritabanı oluştur
+4. **Firestore → Rules** → `firebase/firestore.rules` içeriğini yapıştır → Publish
+5. Project settings → Your apps → Web uygulaması ekle → config değerlerini
+   `.env` dosyasına yaz (`.env.example` şablonu)
+
+Model **tek ekip**: giriş yapan herkes aynı ödeme listesini görür ve düzenler.
+Tema, bildirim saatleri ve PIN cihaza özel kalır; ödemeler, kategoriler,
+kişiler ve belge başlığı paylaşılır.
 
 ## Durum
 

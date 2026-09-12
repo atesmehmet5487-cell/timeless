@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// Timeless — Firestore güvenlik kuralları
+//
+// Firebase panelinde: Firestore Database → Rules → bu dosyanın içeriğini
+// yapıştır → Publish.
+//
+// Model "tek ekip": giriş yapmış herkes aynı ödeme kayıtlarını okur ve
+// düzenler. Giriş yapmamış birinin hiçbir veriye erişimi yoktur.
+//
+// Varsayılan olarak her şey kapalı; yalnızca aşağıdaki yollar açılır.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Ekip verisi: ödemeler, müdahaleler, kişiler, ortak ayarlar
+    match /teams/{teamId}/{collection}/{docId} {
+      allow read, write: if signedIn();
+    }
+
+    // Ekip üyeleri: herkes listeyi görür (kim ekledi bilgisi için),
+    // ama yalnızca kendi satırını yazabilir.
+    match /members/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Yukarıda açıkça izin verilmeyen her şey kapalı
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -10,8 +10,12 @@ import { buildReminders } from './domain/reminders';
 import { buildOccurrences, dayPlan, makeOverride } from './domain/schedule';
 import { DEFAULT_SETTINGS } from './domain/types';
 import type { Contact, ISODate, Occurrence, Override, Payment, Settings } from './domain/types';
+import type { CloudUser } from './services/cloud';
+import { isCloudConfigured } from './services/cloudConfig';
+import { migrateLocalToCloud } from './services/migrate';
 import { getNotifier } from './services/notify';
-import { getRepository } from './services/platform';
+import { getCloudRepository, getLocalRepository } from './services/platform';
+import type { Repository } from './services/repo';
 
 export interface StoreState {
   ready: boolean;
@@ -22,8 +26,17 @@ export interface StoreState {
   settings: Settings;
 }
 
+/** Verinin nerede tutulduğu. */
+export type DataMode = 'local' | 'cloud';
+
 export function useStore() {
-  const repo = useMemo(() => getRepository(), []);
+  /** Bulut oturumu: null ise cihaz deposu kullanılır. */
+  const [session, setSession] = useState<CloudUser | null>(null);
+  const [sessionChecked, setSessionChecked] = useState(!isCloudConfigured());
+  const [repo, setRepo] = useState<Repository>(() => getLocalRepository());
+  const [mode, setMode] = useState<DataMode>('local');
+  const [cloudNotice, setCloudNotice] = useState<string | null>(null);
+
   const [state, setState] = useState<StoreState>({
     ready: false,
     today: D.today(),
@@ -44,6 +57,52 @@ export function useStore() {
     ]);
     setState((s) => ({ ...s, ready: true, today: D.today(), payments, overrides, contacts, settings }));
   }, [repo]);
+
+  // Bulut oturumunu izle; giriş/çıkışta depo değişir.
+  // Firebase kodu yalnızca burada, yapılandırma varsa yüklenir.
+  useEffect(() => {
+    if (!isCloudConfigured()) return;
+    let unsubscribe: (() => void) | null = null;
+    let cancelled = false;
+    void import('./services/cloud').then(({ watchSession }) => {
+      if (cancelled) return;
+      unsubscribe = watchSession((user) => {
+        setSession(user);
+        setSessionChecked(true);
+      });
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, []);
+
+  /**
+   * Oturum açıldığında bulut deposuna geçilir; ilk girişte cihazdaki
+   * kayıtlar buluta taşınır. Çıkışta yerel depoya dönülür.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (session) {
+        const cloud = await getCloudRepository();
+        await cloud.init();
+        const result = await migrateLocalToCloud(getLocalRepository(), cloud);
+        if (cancelled) return;
+        if (result.moved) {
+          setCloudNotice(`${result.payments} kayıt buluta taşındı`);
+        }
+        setRepo(cloud);
+        setMode('cloud');
+      } else {
+        setRepo(getLocalRepository());
+        setMode('local');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
 
   useEffect(() => {
     let cancelled = false;
@@ -184,9 +243,24 @@ export function useStore() {
     [state.payments, state.overrides, state.today],
   );
 
+  const signOut = useCallback(async () => {
+    const { signOutCloud } = await import('./services/cloud');
+    await signOutCloud();
+    setCloudNotice(null);
+  }, []);
+
   return {
     ...state,
+    // Oturum kontrolü bitmeden ekran açılmaz: yerel veri bir an görünüp
+    // sonra bulut verisiyle değişmesin
+    ready: state.ready && sessionChecked,
     repo,
+    mode,
+    session,
+    cloudConfigured: isCloudConfigured(),
+    cloudNotice,
+    dismissCloudNotice: () => setCloudNotice(null),
+    signOut,
     reminders,
     reload,
     addPayment,
