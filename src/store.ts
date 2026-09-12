@@ -260,6 +260,30 @@ export function useStore() {
     [state.payments, state.overrides, state.today],
   );
 
+  /**
+   * Bu cihazda kalmış kayıtları buluta yükler.
+   *
+   * İlk giriş taşıması yalnızca bulut boşken çalışır — ikinci bir cihazdan
+   * girildiğinde oradaki eski kayıtlar ekibin verisinin üzerine yazılmasın
+   * diye. Ama kayıtlar bir cihazda mahsur kalabiliyor; bu düğme onları
+   * kullanıcı isteyince yukarı taşır. Kimlikler sabit olduğu için iki kez
+   * çalıştırmak zarar vermez.
+   */
+  const uploadDeviceRecords = useCallback(async () => {
+    if (mode !== 'cloud') return { payments: 0, overrides: 0, contacts: 0 };
+    const local = getLocalRepository();
+    const backup = await local.exportAll();
+    for (const payment of backup.payments) await repo.savePayment(payment);
+    for (const override of backup.overrides) await repo.saveOverride(override);
+    for (const contact of backup.contacts) await repo.saveContact(contact);
+    await reload();
+    return {
+      payments: backup.payments.length,
+      overrides: backup.overrides.length,
+      contacts: backup.contacts.length,
+    };
+  }, [mode, repo, reload]);
+
   const signOut = useCallback(async () => {
     const { signOutCloud } = await import('./services/cloud');
     await signOutCloud();
@@ -277,6 +301,7 @@ export function useStore() {
     cloudConfigured: isCloudConfigured(),
     cloudNotice,
     dismissCloudNotice: () => setCloudNotice(null),
+    uploadDeviceRecords,
     signOut,
     reminders,
     reload,

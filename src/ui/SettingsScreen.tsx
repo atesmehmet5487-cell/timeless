@@ -342,7 +342,25 @@ export function SettingsScreen({
               Kayıtlar ekiple paylaşılıyor. İnternet yokken de çalışır,
               bağlantı gelince kendiliğinden eşitlenir.
             </p>
-            <div className="mt-3">
+            <p className="mt-3 text-xs text-muted">
+              Giriş yapmadan önce bu cihaza girdiğin kayıtlar buluta çıkmamış
+              olabilir (bulutta kayıt varken ilk giriş taşıması atlanır).
+              Aşağıdaki düğme onları yukarı taşır; iki kez basmak zarar vermez.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                onClick={async () => {
+                  const moved = await store.uploadDeviceRecords();
+                  onToast(
+                    moved.payments === 0
+                      ? 'Bu cihazda yüklenecek kayıt yok'
+                      : `${moved.payments} kayıt buluta yüklendi`,
+                  );
+                }}
+              >
+                Bu cihazdaki kayıtları buluta yükle
+              </Button>
               <Button
                 variant="danger"
                 size="sm"
