@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timeless Gizlilik Politikası</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  color-scheme: light dark;
+  --bg:#faf9fc;
+  --surface:#ffffff;
+  --border:#e7e3f0;
+  --text:#1c1626;
+  --text-dim:#5c5468;
+  --accent:#7e14ff;
+  --accent-2:#47bfff;
+  --accent-soft:#f1e9ff;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#100b18;
+    --surface:#171020;
+    --border:#2a2135;
+    --text:#f1edf7;
+    --text-dim:#a89fb8;
+    --accent:#a969ff;
+    --accent-2:#5ecbff;
+    --accent-soft:#241a35;
+  }
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  padding-inline:20px;
+  padding-block:48px 80px;
+  line-height:1.6;
+}
+.wrap{max-width:700px;margin-inline:auto;}
+
+.mark{
+  width:40px;height:40px;border-radius:11px;
+  background:linear-gradient(135deg,var(--accent),#5b0fe0);
+  display:flex;align-items:center;justify-content:center;
+  flex:none;
+}
+.mark svg{width:16px;height:auto;display:block;}
+
+.masthead{display:flex;align-items:center;gap:12px;margin-bottom:36px;}
+.masthead .name{font-weight:800;font-size:1.05rem;letter-spacing:-0.01em;}
+.masthead .kind{font-size:.8rem;color:var(--text-dim);}
+
+h1{
+  font-size:clamp(1.7rem,4vw,2.3rem);
+  font-weight:800;
+  letter-spacing:-0.02em;
+  text-wrap:balance;
+  margin:0 0 8px;
+}
+.updated{
+  color:var(--text-dim);
+  font-size:.85rem;
+  margin:0 0 40px;
+  font-variant-numeric:tabular-nums;
+}
+
+.lede{
+  font-size:1.05rem;
+  color:var(--text-dim);
+  border-left:3px solid var(--accent);
+  padding-left:16px;
+  margin:0 0 44px;
+  max-width:60ch;
+}
+
+section{margin-bottom:36px;}
+section h2{
+  font-size:1.05rem;
+  font-weight:700;
+  letter-spacing:-0.01em;
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+  margin:0 0 14px;
+}
+section h2 .no{
+  font-size:.78rem;
+  color:var(--accent);
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+section p{margin:0 0 10px;max-width:66ch;color:var(--text);}
+section p.dim{color:var(--text-dim);}
+
+.datagrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:1px;
+  background:var(--border);
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+  margin-top:6px;
+}
+.datagrid .cell{
+  background:var(--surface);
+  padding:16px 18px;
+}
+.datagrid .cell .label{
+  font-size:.72rem;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:var(--text-dim);
+  font-weight:600;
+  margin-bottom:6px;
+}
+.datagrid .cell .val{font-size:.92rem;}
+
+.taglist{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+.tag{
+  font-size:.8rem;
+  padding:5px 11px;
+  border-radius:100px;
+  background:var(--accent-soft);
+  color:var(--accent);
+  font-weight:600;
+  border:1px solid transparent;
+}
+.tag.no{
+  background:transparent;
+  color:var(--text-dim);
+  border-color:var(--border);
+  text-decoration:line-through;
+  font-weight:500;
+}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px 22px;
+}
+
+table{width:100%;border-collapse:collapse;font-size:.9rem;}
+table th{
+  text-align:left;
+  font-size:.72rem;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  color:var(--text-dim);
+  padding-bottom:8px;
+  border-bottom:1px solid var(--border);
+  font-weight:600;
+}
+table td{
+  padding:10px 10px 10px 0;
+  border-bottom:1px solid var(--border);
+  vertical-align:top;
+}
+table tr:last-child td{border-bottom:none;}
+
+.contact{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:16px;
+  background:linear-gradient(135deg,var(--accent-soft),transparent);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:22px 24px;
+}
+.contact a{color:var(--accent);font-weight:700;text-decoration:none;}
+.contact a:hover{text-decoration:underline;}
+.contact .h{font-weight:700;margin-bottom:4px;}
+.contact .d{color:var(--text-dim);font-size:.88rem;}
+
+footer{
+  margin-top:56px;
+  padding-top:20px;
+  border-top:1px solid var(--border);
+  color:var(--text-dim);
+  font-size:.8rem;
+  display:flex;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+@media (max-width:480px){
+  .contact{flex-direction:column;align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="mark">
+      <svg viewBox="0 0 48 46" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z"/></svg>
+    </div>
+    <div>
+      <div class="name">Timeless</div>
+      <div class="kind">Sesli Ödeme Planı Asistanı</div>
+    </div>
+  </div>
+
+  <h1>Gizlilik Politikası</h1>
+  <p class="updated">Son güncelleme: 13 Eylül 2026</p>
+
+  <p class="lede">Timeless, ödeme takvimini sesle veya yazıyla tutmanı sağlayan bir uygulamadır.
+  Bu sayfa uygulamanın hangi veriyi topladığını, nerede sakladığını ve neden ihtiyaç
+  duyduğunu düz bir dille anlatır.</p>
+
+  <section>
+    <h2><span class="no">01</span> Kısa özet</h2>
+    <div class="datagrid">
+      <div class="cell">
+        <div class="label">Hesap açmadan kullanım</div>
+        <div class="val">Mümkün — veriler yalnızca cihazda tutulur</div>
+      </div>
+      <div class="cell">
+        <div class="label">Hesap açarsan</div>
+        <div class="val">E-posta ile giriş, veriler Firebase'de senkronlanır</div>
+      </div>
+      <div class="cell">
+        <div class="label">Reklam</div>
+        <div class="val">Yok</div>
+      </div>
+      <div class="cell">
+        <div class="label">Veri satışı / üçüncü taraf pazarlama</div>
+        <div class="val">Yok</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="no">02</span> Hangi veriyi topluyoruz</h2>
+    <p>Hesap açmadan kullandığında hiçbir veri cihazından çıkmaz. Bulut senkronunu
+    açmak için e-posta ile giriş yaptığında, aşağıdaki veriler <strong>senin hesabın
+    altında</strong> Firebase (Google Cloud, Avrupa bölgesi) sunucularında saklanır:</p>
+    <table>
+      <thead><tr><th>Veri</th><th>Nereden gelir</th><th>Ne için</th></tr></thead>
+      <tbody>
+        <tr><td>E-posta adresi</td><td>Giriş ekranı</td><td>Hesabını tanımlamak, cihazlar arası eşitleme</td></tr>
+        <tr><td>Ödeme kayıtları</td><td>Elle veya sesle eklediğin başlık, tutar, tarih, kategori</td><td>Takvimde göstermek, hatırlatma kurmak, rapor üretmek</td></tr>
+        <tr><td>IBAN (isteğe bağlı)</td><td>Kayıt eklerken kendi girdiğin</td><td>PDF/Excel raporunda göstermek — girmek zorunda değilsin</td></tr>
+        <tr><td>Kişi rehberi kayıtları</td><td>Kendi eklediğin isim/etiketler</td><td>Ödemeyi bir kişiyle eşleştirmek</td></tr>
+        <tr><td>Cihaza özel ayarlar</td><td>Tema, bildirim saati, PIN</td><td>Sadece o cihazda kalır, hesapla birlikte gezmez</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2><span class="no">03</span> Mikrofon</h2>
+    <p>Sesli komut özelliği açıldığında ses, cihazının (veya tarayıcının) konuşma
+    tanıma servisine anlık olarak gönderilir ve metne çevrilir. Timeless ses
+    kaydını kendi sunucusuna göndermez, kaydetmez veya saklamaz — yalnızca
+    çözümlenen metni işler.</p>
+  </section>
+
+  <section>
+    <h2><span class="no">04</span> Kiminle paylaşıyoruz</h2>
+    <p>Veriler yalnızca altyapı sağlayıcımız <strong>Google Firebase</strong>
+    üzerinde barınır. Başka hiçbir şirketle, reklam ağıyla veya analiz servisiyle
+    paylaşılmaz, satılmaz.</p>
+    <div class="taglist">
+      <span class="tag">Firebase (barındırma)</span>
+      <span class="tag no">Reklam ağları</span>
+      <span class="tag no">Analiz / takip SDK'leri</span>
+      <span class="tag no">Veri komisyoncuları</span>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="no">05</span> Verinin korunması</h2>
+    <div class="card">
+      <p>Bağlantı uçtan uca HTTPS ile şifrelenir. Firestore güvenlik kuralı tek bir
+      koşula dayanır: <code>request.auth.uid == teamId</code> — yani bir hesap
+      yalnızca kendi kimliğinin altındaki kayıtlara erişebilir, başka bir
+      kullanıcının verisini göremez.</p>
+      <p class="dim">Uygulamanın içine gömülü Firebase yapılandırma anahtarı (apiKey vb.) gizli bir
+      şifre değildir; veriyi koruyan bu kuraldır, anahtar değil.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="no">06</span> Verini silme</h2>
+    <p>Ayarlar içindeki geçmiş temizleme ve hesap çıkışı seçenekleriyle kayıtlarını
+    dilediğin zaman silebilirsin. Hesabının ve tüm bulut verilerinin tamamen
+    silinmesini istersen aşağıdaki adresten bize yazman yeterli.</p>
+  </section>
+
+  <section>
+    <h2><span class="no">07</span> Çocuklar</h2>
+    <p>Timeless kişisel ödeme takibi için tasarlanmıştır ve çocuklara yönelik
+    değildir; bilerek çocuklardan veri toplamayız.</p>
+  </section>
+
+  <div class="contact">
+    <div>
+      <div class="h">Sorun mu var, veri silinmesini mi istiyorsun?</div>
+      <div class="d">Doğrudan geliştiriciye yaz.</div>
+    </div>
+    <a href="mailto:atesmehmet5487@gmail.com">atesmehmet5487@gmail.com</a>
+  </div>
+
+  <footer>
+    <span>Timeless</span>
+    <span>Bu politika Google Play yayın gereksinimleri için hazırlanmıştır.</span>
+  </footer>
+
+</div>
+</body>
+</html>
