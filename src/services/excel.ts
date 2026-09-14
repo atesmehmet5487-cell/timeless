@@ -35,7 +35,9 @@ export function excelFileName(doc: DocTable): string {
 
 function applyCell(target: ExcelJS.Cell, value: DocCell): void {
   target.border = allBorders;
-  target.alignment = { horizontal: value.align ?? 'left', vertical: 'middle' };
+  // Soldaki metin sütunları (ödeme adı, not) uzunsa hücre içinde alt satıra geçer
+  const align = value.align ?? 'left';
+  target.alignment = { horizontal: align, vertical: 'middle', wrapText: align === 'left' };
 
   const color = TONE_COLORS[value.tone ?? 'normal'];
   if (color || value.bold) {

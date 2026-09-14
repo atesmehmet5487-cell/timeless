@@ -48,14 +48,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
-    <!-- Sesli komut -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
-    <!-- Konuşma tanıma ve TTS servislerini görebilmek için (Android 11+) -->
+    <!-- Sesli okuma (TTS) servisini görebilmek için (Android 11+) -->
     <queries>
-        <intent>
-            <action android:name="android.speech.RecognitionService" />
-        </intent>
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
         </intent>

@@ -138,8 +138,6 @@ export interface Settings {
   defaultCurrency: Currency;
   defaultWeekendPolicy: WeekendPolicy;
   defaultMonthEndPolicy: MonthEndPolicy;
-  /** Sesli komut sonucunu kaydetmeden önce onay ekranı göster. */
-  confirmVoiceInput: boolean;
   ttsEnabled: boolean;
   pinHash?: string;
   lastBackupAt?: string;
@@ -147,6 +145,10 @@ export interface Settings {
   accent: AccentName;
   /** Kullanıcının eklediği kategoriler. */
   customCategories: CustomCategory[];
+  /** Yerleşik kategorilere verilen yeni adlar: { cari: 'Tedarikçiler' }. */
+  categoryNames: Record<string, string>;
+  /** Silinen yerleşik kategoriler. */
+  hiddenCategories: string[];
   /**
    * PDF/Excel başlığında görünen ad: "MEHMET ATEŞ · 12 EYLÜL 2026 ÖDEME PLANI".
    * Boşsa yalnızca tarih kısmı yazılır.
@@ -162,11 +164,12 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultCurrency: 'TRY',
   defaultWeekendPolicy: 'none',
   defaultMonthEndPolicy: 'clampToLastDay',
-  confirmVoiceInput: true,
   ttsEnabled: true,
   theme: 'system',
   accent: 'mavi',
   documentOwner: '',
   customCategories: [],
+  categoryNames: {},
+  hiddenCategories: [],
 };
 

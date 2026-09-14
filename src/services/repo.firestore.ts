@@ -189,6 +189,8 @@ export class FirestoreRepository implements Repository {
     const shared: Partial<Settings> = {
       documentOwner: settings.documentOwner,
       customCategories: settings.customCategories,
+      categoryNames: settings.categoryNames,
+      hiddenCategories: settings.hiddenCategories,
       defaultCurrency: settings.defaultCurrency,
       defaultWeekendPolicy: settings.defaultWeekendPolicy,
       defaultMonthEndPolicy: settings.defaultMonthEndPolicy,

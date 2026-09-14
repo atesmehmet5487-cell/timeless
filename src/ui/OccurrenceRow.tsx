@@ -6,7 +6,7 @@
  */
 import * as D from '../domain/date';
 import { formatMoneyShort } from '../domain/money';
-import { categoryLabel, type CustomCategory } from '../domain/category';
+import { categoryLabel, type CategorySettings } from '../domain/category';
 import { formatIban } from '../domain/iban';
 import type { Occurrence } from '../domain/types';
 import { Button } from './components';
@@ -27,7 +27,7 @@ export function OccurrenceRow({
   onCopyIban,
 }: {
   occurrence: Occurrence;
-  categories: CustomCategory[];
+  categories: CategorySettings;
   /** IBAN'ı panoya kopyalar. */
   onCopyIban?: (iban: string) => void;
   /** Tik kutucuğu: ödendi ↔ ödenmedi. */

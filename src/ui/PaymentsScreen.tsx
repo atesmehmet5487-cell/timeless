@@ -39,7 +39,7 @@ export function PaymentsScreen({
             key={p.id}
             payment={p}
             next={nextByPayment.get(p.id)}
-            categoryText={categoryLabel(p.category, store.settings.customCategories)}
+            categoryText={categoryLabel(p.category, store.settings)}
             onEdit={() => onEdit(p)}
             actions={
               <>
@@ -62,7 +62,7 @@ export function PaymentsScreen({
               key={p.id}
               payment={p}
               next={nextByPayment.get(p.id)}
-              categoryText={categoryLabel(p.category, store.settings.customCategories)}
+              categoryText={categoryLabel(p.category, store.settings)}
               onEdit={() => onEdit(p)}
               actions={
                 <Button size="sm" onClick={() => store.updatePayment({ ...p, archivedAt: undefined })}>
@@ -80,7 +80,7 @@ export function PaymentsScreen({
             <PaymentCard
               key={p.id}
               payment={p}
-              categoryText={categoryLabel(p.category, store.settings.customCategories)}
+              categoryText={categoryLabel(p.category, store.settings)}
               actions={
                 <>
                   <Button size="sm" onClick={() => store.restorePayment(p.id)}>

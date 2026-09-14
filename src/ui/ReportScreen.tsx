@@ -36,7 +36,7 @@ export function ReportScreen({
   const stats = summarizePeriod(store.payments, store.overrides, kind, anchor, {
     today: store.today,
     currency: store.settings.defaultCurrency,
-    categories: store.settings.customCategories,
+    categories: store.settings,
   });
 
   const currency = stats.currency;

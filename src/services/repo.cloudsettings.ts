@@ -18,6 +18,8 @@ import type { BackupData, Repository } from './repo';
 const SHARED_KEYS = [
   'documentOwner',
   'customCategories',
+  'categoryNames',
+  'hiddenCategories',
   'defaultCurrency',
   'defaultWeekendPolicy',
   'defaultMonthEndPolicy',
@@ -27,6 +29,8 @@ function sharedPart(settings: Settings): Pick<Settings, (typeof SHARED_KEYS)[num
   return {
     documentOwner: settings.documentOwner,
     customCategories: settings.customCategories,
+    categoryNames: settings.categoryNames,
+    hiddenCategories: settings.hiddenCategories,
     defaultCurrency: settings.defaultCurrency,
     defaultWeekendPolicy: settings.defaultWeekendPolicy,
     defaultMonthEndPolicy: settings.defaultMonthEndPolicy,

@@ -45,7 +45,7 @@ export function ShareSheet({
     plan,
     store.today,
     store.settings.documentOwner,
-    store.settings.customCategories,
+    store.settings,
   );
   const doc = planToDoc(report);
   const contact = store.contacts.find((c) => c.id === contactId);
@@ -100,6 +100,7 @@ export function ShareSheet({
               <li key={`${row.no}-${row.title}`} className="flex justify-between gap-2">
                 <span className="truncate">
                   {row.dateText} · {row.title}
+                  {row.note && <span className="text-muted"> — {row.note}</span>}
                 </span>
                 <span className="tnum shrink-0">
                   {row.amount === null ? '—' : formatMoneyShort(row.amount, row.currency)}

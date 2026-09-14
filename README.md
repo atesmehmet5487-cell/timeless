@@ -1,7 +1,7 @@
 # Timeless — Sesli Ödeme Planı Asistanı
 
-Ödeme takvimini sesle veya yazıyla kaydeden, günü gelince hatırlatan, listeyi
-PDF olarak WhatsApp'tan paylaşabilen uygulama.
+Ödeme takvimini kaydeden, günü gelince hatırlatan ve sesli okuyan, listeyi
+PDF/Excel olarak WhatsApp'tan paylaşabilen uygulama.
 Tek kod tabanı → **Android APK** (Capacitor) + **Windows masaüstü** (Electron) + tarayıcı.
 
 ## Komutlar
@@ -81,8 +81,8 @@ electron/    Windows kabuğu: pencere, tepsi, JSON deposu, arka plan zamanlayıc
 6. **Paylaşımda platform farkı saklanmıyor.** Android'de PDF tek dokunuşta
    WhatsApp'a dosya olarak gider. Masaüstünde WhatsApp'a dosya iliştirilemediği
    için PDF indirilir, WhatsApp hazır metinle açılır — bu sınır arayüzde yazılı.
-7. **Hiçbir komut sessizce uygulanmaz.** Sesli/yazılı komut önce ayrıştırılır,
-   ne anlaşıldığı onay ekranında gösterilir, uygulama kararı kullanıcınındır.
+7. **Sesle kayıt yok (V1.0.3).** Mikrofonla ekleme kaldırıldı; kayıtlar
+   formdan girilir. `nlp/` motoru formdaki kategori tahmininde kullanılıyor.
 
 ## Bulut (isteğe bağlı)
 
@@ -130,12 +130,14 @@ yükle" düğmesi aynı işi elle yapar.
 - [x] Faz 0 — İskelet, depolama katmanı (Dexie/IndexedDB), Repository arayüzü
 - [x] Faz 1 — Tekrar motoru + erteleme/gecikme mantığı
 - [x] Faz 2 — Bugün ekranı, ödeme ekle/düzenle, kayıtlar/arşiv/çöp kutusu
-- [x] Faz 3 — Türkçe komut motoru, mikrofon, onay ekranı, sesli okuma
+- [x] Faz 3 — Türkçe komut motoru, sesli okuma (mikrofonla ekleme V1.0.3’te kaldırıldı)
 - [x] Faz 4 — Bildirimler: günlük özet, kalem hatırlatmaları, akşam kontrolü;
       Windows kabuğu (tepsi + arka plan zamanlayıcı), Android adaptörü
 - [x] Faz 5 — PDF + Excel üretimi, WhatsApp paylaşımı, kişi rehberi
 - [x] Gider tablosu — gün/hafta/ay/yıl, kategori dağılımı, PDF + Excel çıktısı
-- [x] Kategoriler — "cari" dahil yerleşikler + kullanıcının kendi kategorileri
+- [x] Kategoriler — "cari" dahil yerleşikler + kullanıcının kendi kategorileri;
+      hepsinin adı düzeltilebilir, "Diğer" dışında hepsi silinebilir
+- [x] Not — kayda yazılan not PDF/Excel planında NOT sütununda görünür
 - [x] IBAN — kayıt başına isteğe bağlı hesap numarası
 - [x] Faz 6 — Yedekleme/geri yükleme, geçmiş temizliği, PIN kilidi,
       mükerrer kayıt uyarısı (171 birim test)

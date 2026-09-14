@@ -67,6 +67,10 @@ export function planToDoc(report: ReportData): DocTable {
     report.hasIban
       ? { label: 'IBAN', align: 'center' as const, width: 148, excelWidth: 30 }
       : { label: 'TEKRAR', align: 'center' as const, width: 96, excelWidth: 20 },
+    // Not sütunu yalnızca en az bir kayıtta not varsa; ödeme adıyla alanı paylaşır
+    ...(report.hasNote
+      ? [{ label: 'NOT', align: 'left' as const, width: '*' as const, excelWidth: 34 }]
+      : []),
     { label: 'TUTAR', align: 'right', width: 88, excelWidth: 16 },
     { label: 'DURUM', align: 'center', width: 84, excelWidth: 18 },
   ];
@@ -82,6 +86,7 @@ export function planToDoc(report: ReportData): DocTable {
         align: 'center',
         tone,
       },
+      ...(report.hasNote ? [{ text: row.note ?? '', align: 'left' as const, tone }] : []),
       row.amount === null
         ? { text: '—', align: 'right', tone }
         : { ...money(row.amount, row.currency), tone, bold: !row.paid },

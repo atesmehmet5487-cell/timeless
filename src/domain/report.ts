@@ -7,7 +7,7 @@
 import * as D from './date';
 import { describeRecurrence } from './recurrence';
 import type { DayPlan } from './schedule';
-import { categoryLabel, type CustomCategory } from './category';
+import { categoryLabel, type CategorySettings } from './category';
 import type { Currency, ISODate, Occurrence } from './types';
 
 export interface ReportRow {
@@ -20,6 +20,8 @@ export interface ReportRow {
   category: string;
   /** Ödeme hesabı; girilmemişse null. */
   iban: string | null;
+  /** Kayda yazılan not; boşsa null. */
+  note: string | null;
   recurrence: string;
   /** Tutar yoksa null — Excel'de boş hücre, PDF'te tire. */
   amount: number | null;
@@ -37,6 +39,8 @@ export interface ReportData {
   rows: ReportRow[];
   /** IBAN sütunu gösterilsin mi? */
   hasIban: boolean;
+  /** NOT sütunu gösterilsin mi? */
+  hasNote: boolean;
   totals: Record<Currency, number>;
   /** "12.09.2026 tarihinde hazırlandı" */
   footer: string;
@@ -65,15 +69,17 @@ function toRow(
   o: Occurrence,
   index: number,
   todayISO: ISODate,
-  custom: CustomCategory[],
+  categories: CategorySettings,
 ): ReportRow {
   return {
     no: index + 1,
     date: o.date,
     dateText: D.formatShortTR(o.date),
     title: o.payment.title,
-    category: categoryLabel(o.payment.category, custom),
+    category: categoryLabel(o.payment.category, categories),
     iban: o.payment.iban?.trim() || null,
+    // O güne özel not varsa o, yoksa kaydın kendi notu
+    note: o.override?.note?.trim() || o.payment.note?.trim() || null,
     recurrence: describeRecurrence(o.payment),
     amount: typeof o.payment.amount === 'number' ? o.payment.amount : null,
     currency: o.payment.currency,
@@ -98,16 +104,17 @@ export function buildReport(
   plan: DayPlan,
   todayISO: ISODate,
   owner?: string,
-  custom: CustomCategory[] = [],
+  categories: CategorySettings = {},
 ): ReportData {
   const all = [...plan.overdue, ...plan.items];
-  const rows = all.map((o, i) => toRow(o, i, todayISO, custom));
+  const rows = all.map((o, i) => toRow(o, i, todayISO, categories));
   return {
     heading: reportHeading(plan.date, owner),
     date: plan.date,
     rows,
     // Kimsede IBAN yoksa boş bir sütun göstermenin anlamı yok
     hasIban: rows.some((row) => row.iban !== null),
+    hasNote: rows.some((row) => row.note !== null),
     totals: plan.totals,
     footer: `${D.formatShortTR(todayISO)} tarihinde Timeless ile hazırlandı`,
   };

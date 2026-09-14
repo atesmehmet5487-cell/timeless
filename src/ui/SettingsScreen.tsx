@@ -1,5 +1,13 @@
 /** Bildirim ayarları, izinler ve kabuk sınırları. */
 import { useEffect, useState } from 'react';
+import {
+  categoryLabel,
+  categoryOptions,
+  FALLBACK_CATEGORY,
+  makeCategoryId,
+  removeCategory,
+  renameCategory,
+} from '../domain/category';
 import * as D from '../domain/date';
 import { reminderAt } from '../domain/reminders';
 import { reportHeading } from '../domain/report';
@@ -144,45 +152,7 @@ export function SettingsScreen({
         </p>
       </section>
 
-      {/* Kategoriler */}
-      <section className="rounded-card border border-line bg-surface p-4">
-        <h3 className="mb-1 font-semibold">Kategoriler</h3>
-        <p className="mb-3 text-xs text-muted">
-          Yerleşik kategorilerin yanına kendi kategorilerini ekleyebilirsin. Yeni
-          kategori, ödeme eklerken kategori kutusunun yanındaki + düğmesiyle de
-          eklenebilir.
-        </p>
-
-        {store.settings.customCategories.length === 0 ? (
-          <p className="text-sm text-muted">Henüz özel kategori yok.</p>
-        ) : (
-          <div className="space-y-2">
-            {store.settings.customCategories.map((category) => (
-              <div
-                key={category.id}
-                className="flex items-center justify-between rounded-xl border border-line bg-surface-2 px-3 py-2"
-              >
-                <span className="truncate text-sm font-medium">{category.label}</span>
-                <Button
-                  size="sm"
-                  variant="danger"
-                  onClick={() => {
-                    // Kategoriyi kullanan kayıtlar "Diğer" olarak görünür
-                    void patch({
-                      customCategories: store.settings.customCategories.filter(
-                        (c) => c.id !== category.id,
-                      ),
-                    });
-                    onToast(`"${category.label}" kaldırıldı`);
-                  }}
-                >
-                  Sil
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      <CategoriesSection store={store} onToast={onToast} />
 
       {/* Bildirim izni */}
       <section className="rounded-2xl border border-line bg-surface p-4">
@@ -440,32 +410,154 @@ export function SettingsScreen({
       <BackupSection store={store} onResult={onToast} />
       <CleanupSection store={store} onResult={onToast} />
 
-      {/* Sesli komut */}
+      {/* Sesli okuma */}
       <section className="rounded-2xl border border-line bg-surface p-4">
-        <h3 className="mb-3 font-semibold">Sesli komut</h3>
+        <h3 className="mb-3 font-semibold">Sesli okuma</h3>
         <ToggleRow
-          label="Kaydetmeden önce onay ekranı"
-          hint="Yanlış anlaşılan komutun sessizce kaydedilmesini önler."
-          checked={store.settings.confirmVoiceInput}
-          onChange={(v) => patch({ confirmVoiceInput: v })}
+          label="Listeyi sesli okuma"
+          hint="Üst bardaki 🔊 düğmesi günün listesini okur."
+          checked={store.settings.ttsEnabled}
+          onChange={(v) => patch({ ttsEnabled: v })}
         />
-        <div className="mt-3">
-          <ToggleRow
-            label="Listeyi sesli okuma"
-            hint="Bugün ekranındaki 🔊 Oku düğmesi."
-            checked={store.settings.ttsEnabled}
-            onChange={(v) => patch({ ttsEnabled: v })}
-          />
-        </div>
       </section>
 
       {/* Hakkında — hangi sürümün yüklü olduğu buradan görünür */}
       <section className="rounded-2xl border border-line bg-surface p-4 text-center">
         <p className="font-semibold">Timeless Ödeme Asistanı</p>
         <p className="mt-0.5 text-sm text-ink-soft">V{__APP_VERSION__}</p>
-        <p className="mt-2 text-xs text-muted">Ateş tarafından hazırlanmıştır</p>
+        <p className="mt-2 text-xs text-muted">By Ateş tarafından hazırlanmıştır</p>
       </section>
     </div>
+  );
+}
+
+/** Kategori adlarını düzeltme, kategori silme ve yeni kategori ekleme. */
+function CategoriesSection({ store, onToast }: { store: Store; onToast: (m: string) => void }) {
+  /** Adı düzenlenen kategori ve yazılan yeni ad. */
+  const [editing, setEditing] = useState<{ id: string; label: string } | null>(null);
+  const [newLabel, setNewLabel] = useState('');
+  const settings = store.settings;
+  const hiddenCount = settings.hiddenCategories.length;
+
+  const save = (changes: Partial<typeof settings>) =>
+    store.saveSettings({ ...store.settings, ...changes });
+
+  const commitRename = async () => {
+    if (!editing) return;
+    const old = categoryLabel(editing.id, settings);
+    const next = renameCategory(settings, editing.id, editing.label);
+    await save(next);
+    setEditing(null);
+    const shown = categoryLabel(editing.id, next);
+    if (shown !== old) onToast(`"${old}" → "${shown}"`);
+  };
+
+  const add = async () => {
+    const label = newLabel.trim();
+    if (!label) return;
+    await save({
+      customCategories: [...settings.customCategories, { id: makeCategoryId(label), label }],
+    });
+    setNewLabel('');
+    onToast(`"${label}" kategorisi eklendi`);
+  };
+
+  return (
+    <section className="rounded-card border border-line bg-surface p-4">
+      <h3 className="mb-1 font-semibold">Kategoriler</h3>
+      <p className="mb-3 text-xs text-muted">
+        ✏️ ile adını düzeltebilir, Sil ile kaldırabilirsin. Silinen kategorideki
+        kayıtlar kaybolmaz, “{categoryLabel(FALLBACK_CATEGORY, settings)}” altında
+        görünür. “{categoryLabel(FALLBACK_CATEGORY, settings)}” silinemez.
+      </p>
+
+      <div className="space-y-2">
+        {categoryOptions(settings).map((category) =>
+          editing?.id === category.id ? (
+            <div
+              key={category.id}
+              className="flex items-center gap-2 rounded-xl border border-accent bg-surface-2 px-2 py-1.5"
+            >
+              <input
+                className={inputClass}
+                value={editing.label}
+                autoFocus
+                aria-label="Kategori adı"
+                onChange={(e) => setEditing({ id: category.id, label: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void commitRename();
+                  if (e.key === 'Escape') setEditing(null);
+                }}
+              />
+              <Button
+                size="sm"
+                variant="primary"
+                // Özel kategori boş ada çevrilemez; yerleşik boş adla özgün adına döner
+                disabled={category.custom && !editing.label.trim()}
+                onClick={commitRename}
+              >
+                Kaydet
+              </Button>
+              <Button size="sm" onClick={() => setEditing(null)}>
+                Vazgeç
+              </Button>
+            </div>
+          ) : (
+            <div
+              key={category.id}
+              className="flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2"
+            >
+              <span className="min-w-0 flex-1 truncate text-sm font-medium">{category.label}</span>
+              <Button
+                size="sm"
+                title="Adını düzelt"
+                aria-label={`${category.label} adını düzelt`}
+                onClick={() => setEditing({ id: category.id, label: category.label })}
+              >
+                ✏️
+              </Button>
+              {category.id !== FALLBACK_CATEGORY && (
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => {
+                    void save(removeCategory(settings, category.id));
+                    onToast(`"${category.label}" silindi`);
+                  }}
+                >
+                  Sil
+                </Button>
+              )}
+            </div>
+          ),
+        )}
+      </div>
+
+      <div className="mt-3 flex gap-2">
+        <input
+          className={inputClass}
+          value={newLabel}
+          placeholder="Yeni kategori adı"
+          onChange={(e) => setNewLabel(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && void add()}
+        />
+        <Button variant="primary" disabled={!newLabel.trim()} onClick={add}>
+          Ekle
+        </Button>
+      </div>
+
+      {hiddenCount > 0 && (
+        <button
+          className="mt-3 text-xs font-medium text-accent hover:underline"
+          onClick={() => {
+            void save({ hiddenCategories: [] });
+            onToast('Silinen hazır kategoriler geri getirildi');
+          }}
+        >
+          Silinen {hiddenCount} hazır kategoriyi geri getir
+        </button>
+      )}
+    </section>
   );
 }
 

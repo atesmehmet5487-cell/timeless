@@ -7,6 +7,8 @@ import type { NewPaymentInput } from '../domain/payment';
 import {
   categoryOptions,
   makeCategoryId,
+  resolveCategory,
+  type CategorySettings,
   type CustomCategory,
 } from '../domain/category';
 import { checkIban, formatIban, normalizeIban } from '../domain/iban';
@@ -139,8 +141,8 @@ export function PaymentSheet({
   onClose: () => void;
   onSave: (input: NewPaymentInput) => void | Promise<void>;
   onDelete?: () => void;
-  /** Kullanıcının eklediği kategoriler. */
-  categories: CustomCategory[];
+  /** Kategori adları, silinenler ve kullanıcının eklediği kategoriler. */
+  categories: CategorySettings;
   /** Yeni kategori kaydeder ve seçili hâle getirir. */
   onAddCategory: (category: CustomCategory) => void | Promise<void>;
 }) {
@@ -190,7 +192,10 @@ export function PaymentSheet({
             setDraft((d) => ({
               ...d,
               title,
-              category: categoryTouched ? d.category : guessCategory(title),
+              // Tahmin edilen kategori silinmişse "Diğer"e düşer
+              category: categoryTouched
+                ? d.category
+                : resolveCategory(guessCategory(title), categories),
             }));
           }}
         />
@@ -227,7 +232,8 @@ export function PaymentSheet({
         <div className="flex gap-2">
           <select
             className={inputClass}
-            value={draft.category}
+            // Kaydın kategorisi sonradan silindiyse listede "Diğer" seçili görünür
+            value={resolveCategory(draft.category, categories)}
             onChange={(e) => {
               setCategoryTouched(true);
               set('category', e.target.value as Category);

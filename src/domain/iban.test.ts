@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { categoryLabel, categoryOptions, makeCategoryId } from './category';
+import {
+  categoryLabel,
+  categoryOptions,
+  makeCategoryId,
+  removeCategory,
+  renameCategory,
+  resolveCategory,
+} from './category';
 import { checkIban, formatIban, isTurkishIbanShape, isValidIban, normalizeIban } from './iban';
 
 describe('IBAN biçimi', () => {
@@ -65,12 +72,46 @@ describe('kategoriler', () => {
   });
 
   it('özel kategoriyi listeden çözer', () => {
-    const custom = [{ id: 'ozel-nakliye-1a2b', label: 'Nakliye' }];
-    expect(categoryLabel('ozel-nakliye-1a2b', custom)).toBe('Nakliye');
+    const customCategories = [{ id: 'ozel-nakliye-1a2b', label: 'Nakliye' }];
+    expect(categoryLabel('ozel-nakliye-1a2b', { customCategories })).toBe('Nakliye');
   });
 
   it('silinmiş özel kategori "Diğer" olarak görünür', () => {
-    expect(categoryLabel('ozel-yok-9999', [])).toBe('Diğer');
+    expect(categoryLabel('ozel-yok-9999', { customCategories: [] })).toBe('Diğer');
+  });
+
+  it('yerleşik kategorinin adı değiştirilebilir, boş ad özgün ada döner', () => {
+    const renamed = renameCategory({}, 'cari', 'Tedarikçiler');
+    expect(categoryLabel('cari', renamed)).toBe('Tedarikçiler');
+    expect(categoryOptions(renamed).find((o) => o.id === 'cari')?.label).toBe('Tedarikçiler');
+    expect(categoryLabel('cari', renameCategory(renamed, 'cari', '  '))).toBe('Cari Hesap');
+  });
+
+  it('özel kategorinin adı değiştirilir, kimliği aynı kalır', () => {
+    const settings = { customCategories: [{ id: 'ozel-car-1', label: 'Car' }] };
+    const renamed = renameCategory(settings, 'ozel-car-1', 'Araç');
+    expect(renamed.customCategories).toEqual([{ id: 'ozel-car-1', label: 'Araç' }]);
+  });
+
+  it('silinen yerleşik kategori listeden çıkar, kayıtları "Diğer" görünür', () => {
+    const settings = removeCategory({}, 'kira');
+    expect(categoryOptions(settings).map((o) => o.id)).not.toContain('kira');
+    expect(categoryLabel('kira', settings)).toBe('Diğer');
+    expect(resolveCategory('kira', settings)).toBe('diger');
+  });
+
+  it('"Diğer" silinemez', () => {
+    const settings = removeCategory({}, 'diger');
+    expect(categoryOptions(settings).map((o) => o.id)).toContain('diger');
+  });
+
+  it('silinen özel kategori listeden çıkar', () => {
+    const settings = removeCategory(
+      { customCategories: [{ id: 'ozel-car-1', label: 'Car' }] },
+      'ozel-car-1',
+    );
+    expect(settings.customCategories).toEqual([]);
+    expect(categoryLabel('ozel-car-1', settings)).toBe('Diğer');
   });
 
   it('kimlik üretirken Türkçe harfleri sadeleştirir', () => {
@@ -79,7 +120,7 @@ describe('kategoriler', () => {
   });
 
   it('seçenek listesi yerleşiklerle başlar, özeller sonda gelir', () => {
-    const options = categoryOptions([{ id: 'ozel-x-1', label: 'Nakliye' }]);
+    const options = categoryOptions({ customCategories: [{ id: 'ozel-x-1', label: 'Nakliye' }] });
     expect(options[0].id).toBe('kart');
     expect(options[1].id).toBe('cari');
     expect(options[options.length - 1]).toEqual({

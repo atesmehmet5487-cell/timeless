@@ -4,7 +4,7 @@
  * Saf hesap katmanı — ekran bilmiyor. Gün/hafta/ay/yıl aynı işlevden çıkar,
  * böylece "bugün" ile "bu ay" arasında tutarsızlık olamaz.
  */
-import { categoryLabel, type CustomCategory } from './category';
+import { categoryLabel, resolveCategory, type CategorySettings } from './category';
 import * as D from './date';
 import { buildOccurrences } from './schedule';
 import type { Currency, ISODate, Occurrence, Override, Payment } from './types';
@@ -112,11 +112,11 @@ export function summarizePeriod(
   overrides: Override[],
   kind: PeriodKind,
   anchor: ISODate,
-  opts: { today?: ISODate; currency?: Currency; categories?: CustomCategory[] } = {},
+  opts: { today?: ISODate; currency?: Currency; categories?: CategorySettings } = {},
 ): PeriodStats {
   const today = opts.today ?? D.today();
   const currency = opts.currency ?? 'TRY';
-  const categories = opts.categories ?? [];
+  const categories = opts.categories ?? {};
   const range = periodRange(kind, anchor);
 
   const all = buildOccurrences(payments, overrides, range.from, range.to, today);
@@ -141,7 +141,8 @@ export function summarizePeriod(
       overdueCount++;
     }
 
-    const id = String(o.payment.category);
+    // Silinmiş kategorilerin kayıtları "Diğer" satırında toplanır
+    const id = String(resolveCategory(o.payment.category, categories));
     const bucket = buckets.get(id) ?? {
       id,
       label: categoryLabel(o.payment.category, categories),

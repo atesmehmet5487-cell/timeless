@@ -92,9 +92,21 @@ describe('kategori dağılımı', () => {
     const custom = [{ id: 'ozel-nakliye-1', label: 'Nakliye' }];
     const stats = summarizePeriod([payment('Tır', 900, 'ozel-nakliye-1', 15)], [], 'month', TODAY, {
       today: TODAY,
-      categories: custom,
+      categories: { customCategories: custom },
     });
     expect(stats.byCategory[0].label).toBe('Nakliye');
+  });
+
+  it('silinen kategorinin tutarı "Diğer" satırında toplanır', () => {
+    const stats = summarizePeriod(
+      [payment('Dükkan kirası', 900, 'kira', 15), payment('Aidat', 100, 'diger', 16)],
+      [],
+      'month',
+      TODAY,
+      { today: TODAY, categories: { hiddenCategories: ['kira'] } },
+    );
+    expect(stats.byCategory).toHaveLength(1);
+    expect(stats.byCategory[0]).toMatchObject({ id: 'diger', label: 'Diğer', total: 1000 });
   });
 
   it('gün dönemi yalnızca o günü sayar', () => {

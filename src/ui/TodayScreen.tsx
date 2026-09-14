@@ -50,7 +50,7 @@ export function TodayScreen({
     <OccurrenceRow
       key={`${o.paymentId}-${o.originalDate}`}
       occurrence={o}
-      categories={store.settings.customCategories}
+      categories={store.settings}
       onCopyIban={onCopyIban}
       onTogglePaid={(paid) =>
         paid

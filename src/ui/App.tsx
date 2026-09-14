@@ -3,11 +3,10 @@ import * as D from '../domain/date';
 import { createPayment, findDuplicate, type NewPaymentInput } from '../domain/payment';
 import { speakableSummary } from '../domain/summary';
 import type { ISODate, Occurrence, Payment } from '../domain/types';
-import type { Action, PendingOccurrenceAction } from '../nlp/commands';
 import { registerNotificationActions } from '../services/notify';
 import { speak, stopSpeaking, warmUpVoices } from '../services/tts';
 import { useStore } from '../store';
-import { Button, Sheet } from './components';
+import { Button } from './components';
 import { AuthSheet } from './AuthSheet';
 import { DeferSheet } from './DeferSheet';
 import { LockScreen } from './LockScreen';
@@ -19,7 +18,6 @@ import { PaymentSheet, draftFromPayment, emptyDraft, type PaymentDraft } from '.
 import { TodayScreen } from './TodayScreen';
 import { TitleBar } from './TitleBar';
 import { Toast, useToast } from './Toast';
-import { VoiceSheet } from './VoiceSheet';
 
 type Tab = 'today' | 'payments' | 'report' | 'settings';
 
@@ -38,7 +36,7 @@ function IconButton({
       onClick={onClick}
       title={label}
       aria-label={label}
-      className="grid h-9 w-9 place-items-center rounded-xl bg-surface-2 text-base transition hover:brightness-95 active:scale-95"
+      className="grid h-9 w-9 place-items-center rounded-xl max-[360px]:h-8 max-[360px]:w-8 bg-surface-2 text-base transition hover:brightness-95 active:scale-95"
     >
       {children}
     </button>
@@ -59,12 +57,6 @@ export function App() {
 
   const [sheet, setSheet] = useState<{ draft: PaymentDraft; editing?: Payment } | null>(null);
   const [deferring, setDeferring] = useState<Occurrence | null>(null);
-  const [voiceOpen, setVoiceOpen] = useState(false);
-  const [chooser, setChooser] = useState<{
-    candidates: Occurrence[];
-    next: PendingOccurrenceAction;
-  } | null>(null);
-  const [paymentChooser, setPaymentChooser] = useState<Payment[] | null>(null);
   /** Mükerrer uyarısı gösterilen kayıt — ikinci kaydet onay sayılır. */
   const [pendingDuplicate, setPendingDuplicate] = useState<string | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
@@ -110,27 +102,6 @@ export function App() {
   }, [store, selectDate]);
 
   const plan = store.planFor(date);
-  const todayPlan = store.planFor(store.today);
-
-  /**
-   * Sesli komutun eşleştirebileceği açık kalemler: gecikmişler + önümüzdeki
-   * 60 gün. Her seriden yalnızca en yakın tarihli örnek alınır; aksi hâlde
-   * "ziraat kartını ödedim" aynı serinin üç ayına birden eşleşir ve
-   * kullanıcıya gereksiz bir seçim listesi çıkardı.
-   */
-  const openOccurrences = (() => {
-    const upcoming = store.rangeFor(store.today, D.addDays(store.today, 60));
-    const seen = new Set<string>();
-    const out: Occurrence[] = [];
-    for (const o of [...todayPlan.overdue, ...upcoming]) {
-      if (o.status === 'paid' || o.status === 'skipped') continue;
-      if (seen.has(o.paymentId)) continue;
-      seen.add(o.paymentId);
-      out.push(o);
-    }
-    return out;
-  })();
-
   const openNew = () => setSheet({ draft: emptyDraft(date) });
   const openEdit = (payment: Payment) =>
     setSheet({ draft: draftFromPayment(payment), editing: payment });
@@ -172,66 +143,6 @@ export function App() {
     [plan, store.today, store.settings.ttsEnabled, show],
   );
 
-  /** Sesli komut sonucunu uygular. */
-  const applyAction = async (action: Action) => {
-    switch (action.kind) {
-      case 'add': {
-        setVoiceOpen(false);
-        await store.addPayment(action.payment);
-        show(`Kaydedildi: ${action.payment.title}`);
-        break;
-      }
-      case 'defer': {
-        setVoiceOpen(false);
-        await store.setOccurrenceStatus(action.occurrence, {
-          status: 'deferred',
-          deferredTo: action.date,
-        });
-        show(`${action.occurrence.payment.title} → ${D.formatShortTR(action.date)}`);
-        break;
-      }
-      case 'markPaid': {
-        setVoiceOpen(false);
-        await store.setOccurrenceStatus(action.occurrence, {
-          status: 'paid',
-          paidAmount: action.amount,
-        });
-        show(`${action.occurrence.payment.title} ödendi olarak işaretlendi`);
-        break;
-      }
-      case 'delete': {
-        setVoiceOpen(false);
-        await store.trashPayment(action.payment.id);
-        show(`${action.payment.title} çöp kutusuna taşındı`);
-        break;
-      }
-      case 'list': {
-        setVoiceOpen(false);
-        setTab('today');
-        selectDate(action.date);
-        readAloud(store.planFor(action.date));
-        break;
-      }
-      case 'send': {
-        setVoiceOpen(false);
-        setShareDate(action.date);
-        setShareOpen(true);
-        break;
-      }
-      case 'chooseOccurrence':
-        setVoiceOpen(false);
-        setChooser({ candidates: action.candidates, next: action.next });
-        break;
-      case 'choosePayment':
-        setVoiceOpen(false);
-        setPaymentChooser(action.candidates);
-        break;
-      case 'incomplete':
-        show(action.reason);
-        break;
-    }
-  };
-
   if (!store.ready) {
     return <div className="grid h-full place-items-center text-muted">Yükleniyor…</div>;
   }
@@ -258,11 +169,12 @@ export function App() {
         Asistanı". Kazanılan yer sekmelere ve hızlı eylem simgelerine gidiyor.
       */}
       {/*
-        Dar telefonlarda 4 sekme + 3 simge yan yana sığmıyordu ve en sağdaki
-        "gönder" simgesi ekranın dışında kalıyordu. Sekmeler gerekirse yatay
-        kayar; simgeler hiçbir zaman daralmaz.
+        Dar telefonlarda sekmeler + simgeler yan yana sığmıyordu: önce "gönder"
+        simgesi ekranın dışında kaldı, sonra "Ayarlar" sekmesi "Aya" diye
+        kesildi. Mikrofon simgesi kalktı, sekme iç boşlukları daraldı; sekmeler
+        yine de sığmazsa yatay kayar, simgeler hiçbir zaman daralmaz.
       */}
-      <header className="safe-top sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-line bg-canvas/90 px-3 py-2.5 backdrop-blur">
+      <header className="safe-top sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-line bg-canvas/90 px-3 py-2.5 max-[360px]:gap-1.5 max-[360px]:px-2 backdrop-blur">
         <nav className="no-scrollbar flex min-w-0 gap-0.5 overflow-x-auto rounded-xl bg-surface-2 p-1 text-xs">
           {(
             [
@@ -275,7 +187,7 @@ export function App() {
             <button
               key={value}
               onClick={() => setTab(value)}
-              className={`shrink-0 rounded-lg px-2.5 py-1.5 font-medium transition ${
+              className={`shrink-0 whitespace-nowrap rounded-lg px-2 py-1.5 max-[360px]:px-1.5 font-medium transition ${
                 tab === value ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink'
               }`}
             >
@@ -285,12 +197,6 @@ export function App() {
         </nav>
 
         <div className="flex shrink-0 gap-1">
-          <IconButton
-            label="Sesli veya yazılı komut"
-            onClick={() => setVoiceOpen(true)}
-          >
-            🎤
-          </IconButton>
           <IconButton label="Günün listesini sesli oku" onClick={() => readAloud()}>
             🔊
           </IconButton>
@@ -349,7 +255,7 @@ export function App() {
             setPendingDuplicate(null);
           }}
           onSave={savePayment}
-          categories={store.settings.customCategories}
+          categories={store.settings}
           onAddCategory={async (category) => {
             await store.saveSettings({
               ...store.settings,
@@ -380,71 +286,6 @@ export function App() {
           setDeferring(null);
         }}
       />
-
-      <VoiceSheet
-        open={voiceOpen}
-        context={{ today: store.today, openOccurrences, payments: store.payments }}
-        onClose={() => setVoiceOpen(false)}
-        onApply={applyAction}
-      />
-
-      {/* Sesli komut hedefi seçilemediğinde */}
-      <Sheet
-        open={chooser !== null}
-        title="Hangi ödeme?"
-        onClose={() => setChooser(null)}
-      >
-        <div className="space-y-2">
-          {chooser?.candidates.map((o) => (
-            <button
-              key={`${o.paymentId}-${o.originalDate}`}
-              className="w-full rounded-xl border border-line bg-surface-2 px-3 py-3 text-left hover:border-accent"
-              onClick={async () => {
-                const next = chooser.next;
-                if (next.kind === 'defer') {
-                  await store.setOccurrenceStatus(o, {
-                    status: 'deferred',
-                    deferredTo: next.date,
-                  });
-                  show(`${o.payment.title} → ${D.formatShortTR(next.date)}`);
-                } else {
-                  await store.setOccurrenceStatus(o, { status: 'paid', paidAmount: next.amount });
-                  show(`${o.payment.title} ödendi olarak işaretlendi`);
-                }
-                setChooser(null);
-              }}
-            >
-              <span className="font-medium">{o.payment.title}</span>
-              <span className="ml-2 text-xs text-muted">{D.formatShortTR(o.date)}</span>
-            </button>
-          ))}
-          {chooser?.candidates.length === 0 && (
-            <p className="text-sm text-muted">Açık ödeme bulunamadı.</p>
-          )}
-        </div>
-      </Sheet>
-
-      <Sheet
-        open={paymentChooser !== null}
-        title="Hangi kayıt silinsin?"
-        onClose={() => setPaymentChooser(null)}
-      >
-        <div className="space-y-2">
-          {paymentChooser?.map((p) => (
-            <button
-              key={p.id}
-              className="w-full rounded-xl border border-line bg-surface-2 px-3 py-3 text-left hover:border-danger"
-              onClick={async () => {
-                await store.trashPayment(p.id);
-                setPaymentChooser(null);
-                show(`${p.title} çöp kutusuna taşındı`);
-              }}
-            >
-              {p.title}
-            </button>
-          ))}
-        </div>
-      </Sheet>
 
       <AuthSheet open={authOpen} onClose={() => setAuthOpen(false)} onResult={show} />
 

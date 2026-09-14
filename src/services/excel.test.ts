@@ -82,6 +82,19 @@ describe('günlük plan Excel çıktısı', () => {
     const xml = await contentsOf(doc);
     expect(xml.toUpperCase()).toContain('FF92D050');
   });
+
+  it('not yoksa NOT sütunu eklenmez', () => {
+    expect(doc.columns.map((c) => c.label)).not.toContain('NOT');
+  });
+
+  it('kayda yazılan not NOT sütununda görünür', async () => {
+    const withNote = { ...payment('Aserva cari', 2500, 'cari', 15), note: 'Fatura no 1234' };
+    const noted = planToDoc(buildReport(dayPlan([withNote], [], TODAY, TODAY), TODAY));
+    const labels = noted.columns.map((c) => c.label);
+    expect(labels).toContain('NOT');
+    expect(noted.rows[0][labels.indexOf('NOT')].text).toBe('Fatura no 1234');
+    expect(await contentsOf(noted)).toContain('Fatura no 1234');
+  });
 });
 
 describe('gider tablosu Excel çıktısı', () => {
