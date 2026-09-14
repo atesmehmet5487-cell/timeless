@@ -63,6 +63,9 @@ export class CloudWithDeviceSettings implements Repository {
   init(): Promise<void> {
     return this.cloud.init();
   }
+  watch(onChange: () => void): () => void {
+    return this.cloud.watch?.(onChange) ?? (() => undefined);
+  }
   listPayments(opts?: { includeDeleted?: boolean; includeArchived?: boolean }): Promise<Payment[]> {
     return this.cloud.listPayments(opts);
   }

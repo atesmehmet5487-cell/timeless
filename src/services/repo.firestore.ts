@@ -9,6 +9,11 @@
  *
  * Silme: satırlar hemen yok edilmez, `deletedAt` damgası konur. Aksi hâlde
  * bir cihazda silinen kayıt, diğer cihaz eski hâlini yazdığında geri gelir.
+ *
+ * Kayıt, müdahale ve kişi **bütün olarak** yazılır (merge yok). merge ile
+ * yazınca boşaltılan alan gönderilmediği için bulutta eski değeriyle kalıyordu:
+ * silinen not/IBAN geri geliyor, arşivden çıkarılan kayıt görünmüyor, işareti
+ * kaldırılıp yeniden "ödendi" yapılan kalem silinmiş sayılıyordu.
  */
 import {
   collection,
@@ -16,6 +21,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   setDoc,
   writeBatch,
 } from 'firebase/firestore';
@@ -67,9 +73,7 @@ export class FirestoreRepository implements Repository {
   }
 
   async savePayment(payment: Payment): Promise<void> {
-    await setDoc(doc(cloudDb(), teamPath('payments'), payment.id), clean(payment), {
-      merge: true,
-    });
+    await setDoc(doc(cloudDb(), teamPath('payments'), payment.id), clean(payment));
   }
 
   async trashPayment(id: string): Promise<void> {
@@ -121,12 +125,9 @@ export class FirestoreRepository implements Repository {
   async saveOverride(override: Override): Promise<void> {
     // Anahtar seri + gün olduğundan belge kimliği de ondan üretilir:
     // aynı günün müdahalesi iki kez oluşmaz, cihazlar aynı satıra yazar.
+    // Bütün olarak yazılır: önceki silinme damgası ve erteleme tarihi kalmaz.
     const id = `${override.paymentId}_${override.originalDate}`;
-    await setDoc(
-      doc(cloudDb(), teamPath('overrides'), id),
-      clean({ ...override, id, deletedAt: undefined }),
-      { merge: true },
-    );
+    await setDoc(doc(cloudDb(), teamPath('overrides'), id), clean({ ...override, id }));
   }
 
   async deleteOverride(id: string): Promise<void> {
@@ -162,9 +163,7 @@ export class FirestoreRepository implements Repository {
   }
 
   async saveContact(contact: Contact): Promise<void> {
-    await setDoc(doc(cloudDb(), teamPath('contacts'), contact.id), clean(contact), {
-      merge: true,
-    });
+    await setDoc(doc(cloudDb(), teamPath('contacts'), contact.id), clean(contact));
   }
 
   async deleteContact(id: string): Promise<void> {
@@ -198,6 +197,33 @@ export class FirestoreRepository implements Repository {
     await setDoc(doc(cloudDb(), teamPath('settings'), 'team'), clean(shared), { merge: true });
   }
 
+  /**
+   * Başka bir cihaz veriyi değiştirince haber verir: uygulama açıkken
+   * telefonda eklenen kayıt bilgisayarda yeniden başlatmadan görünsün.
+   *
+   * Bu cihazın kendi yazmaları (hasPendingWrites) sayılmaz — onlardan sonra
+   * ekran zaten tazeleniyor. Art arda gelen olaylar tek tazelemede toplanır.
+   */
+  watch(onChange: () => void): () => void {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const changed = (snapshot: { metadata: { hasPendingWrites: boolean } }) => {
+      if (snapshot.metadata.hasPendingWrites) return;
+      clearTimeout(timer);
+      timer = setTimeout(onChange, 400);
+    };
+    const db = cloudDb();
+    const stops = [
+      onSnapshot(collection(db, teamPath('payments')), changed),
+      onSnapshot(collection(db, teamPath('overrides')), changed),
+      onSnapshot(collection(db, teamPath('contacts')), changed),
+      onSnapshot(doc(db, teamPath('settings'), 'team'), changed),
+    ];
+    return () => {
+      clearTimeout(timer);
+      stops.forEach((stop) => stop());
+    };
+  }
+
   async exportAll(): Promise<BackupData> {
     const [payments, overrides, contacts, settings] = await Promise.all([
       this.listPayments({ includeArchived: true, includeDeleted: true }),
@@ -228,7 +254,7 @@ export class FirestoreRepository implements Repository {
     let count = 0;
 
     const push = (path: string, id: string, value: Record<string, unknown>) => {
-      batch.set(doc(db, path, id), value, { merge: true });
+      batch.set(doc(db, path, id), value);
       count++;
       if (count === 450) {
         const current = batch;

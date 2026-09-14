@@ -137,6 +137,24 @@ export function useStore() {
     };
   }, [repo, reload]);
 
+  /**
+   * Öbür cihazdaki değişiklikler: bulut deposu haber verince ekran tazelenir.
+   * Telefonda uygulama arka plandan dönünce de bir kez okunur — Android
+   * arka plandaki bağlantıyı kesmiş olabilir.
+   */
+  useEffect(() => {
+    if (!repo.watch) return;
+    const stop = repo.watch(() => void reload());
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void reload();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [repo, reload]);
+
   // Gece yarısını geçince "bugün" kendiliğinden ilerlesin
   useEffect(() => {
     const timer = setInterval(() => {
@@ -270,22 +288,16 @@ export function useStore() {
    * İlk giriş taşıması yalnızca bulut boşken çalışır — ikinci bir cihazdan
    * girildiğinde oradaki eski kayıtlar ekibin verisinin üzerine yazılmasın
    * diye. Ama kayıtlar bir cihazda mahsur kalabiliyor; bu düğme onları
-   * kullanıcı isteyince yukarı taşır. Kimlikler sabit olduğu için iki kez
-   * çalıştırmak zarar vermez.
+   * kullanıcı isteyince yukarı taşır. Yalnızca bulutta olmayanlar yüklenir:
+   * kayıtlar bütün olarak yazıldığı için cihazdaki eski kopya, öbür cihazda
+   * yapılan düzenlemeyi ya da çöpe atmayı geri alırdı. İki kez basmak zarar
+   * vermez.
    */
   const uploadDeviceRecords = useCallback(async () => {
     if (mode !== 'cloud') return { payments: 0, overrides: 0, contacts: 0 };
-    const local = getLocalRepository();
-    const backup = await local.exportAll();
-    for (const payment of backup.payments) await repo.savePayment(payment);
-    for (const override of backup.overrides) await repo.saveOverride(override);
-    for (const contact of backup.contacts) await repo.saveContact(contact);
+    const moved = await migrateLocalToCloud(getLocalRepository(), repo);
     await reload();
-    return {
-      payments: backup.payments.length,
-      overrides: backup.overrides.length,
-      contacts: backup.contacts.length,
-    };
+    return moved;
   }, [mode, repo, reload]);
 
   const signOut = useCallback(async () => {

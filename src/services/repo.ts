@@ -51,6 +51,13 @@ export interface Repository {
   getSettings(): Promise<Settings>;
   saveSettings(settings: Settings): Promise<void>;
 
+  /**
+   * Veri başka bir yerden (öbür cihaz) değişince onChange çağrılır; abonelikten
+   * çıkma işlevini döndürür. Yalnızca bulut deposunda var — cihaz depolarını
+   * değiştiren tek şey bu uygulamanın kendisi.
+   */
+  watch?(onChange: () => void): () => void;
+
   exportAll(): Promise<BackupData>;
   importAll(data: BackupData, mode: 'replace' | 'merge'): Promise<void>;
 }
