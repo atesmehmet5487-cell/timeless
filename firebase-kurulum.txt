@@ -1,0 +1,104 @@
+====================================================
+  TİMELESS - FİREBASE BULUT SENKRON KURULUM REHBERİ
+====================================================
+
+Proje: timeless-9765d
+Amaç: Telefon ve bilgisayar arasında otomatik senkronizasyon
+
+
+----------------------------------------------------
+ADIM 1 — EMAIL/PASSWORD GİRİŞİNİ AKTİF ET
+----------------------------------------------------
+
+1. Şu adresi aç:
+   https://console.firebase.google.com/u/0/project/timeless-9765d/authentication/providers
+
+2. "Email/Password" satırına tıkla
+
+3. İlk toggle'ı (Enable) AÇ
+
+4. "Save" butonuna tıkla
+
+✓ Artık uygulamada hesap oluşturulabilir.
+
+
+----------------------------------------------------
+ADIM 2 — FİRESTORE VERİTABANI OLUŞTUR
+----------------------------------------------------
+
+1. Şu adresi aç:
+   https://console.firebase.google.com/u/0/project/timeless-9765d/firestore
+
+2. "Create database" butonuna tıkla
+
+3. "Production mode" seç → İleri
+
+4. Bölge: eur3 (europe-west) seç → Oluştur
+
+5. Birkaç saniye bekle, veritabanı hazırlanıyor.
+
+✓ Artık veriler buluta kaydedilebilir.
+
+
+----------------------------------------------------
+ADIM 3 — FİRESTORE GÜVENLİK KURALLARINI YÜKLE
+----------------------------------------------------
+
+1. Firestore sayfasında üstteki "Rules" sekmesine tıkla
+
+2. Mevcut kuralları SİL, yerine şunu yapıştır:
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+
+3. "Publish" butonuna tıkla
+
+✓ Güvenlik aktif — başka kullanıcılar senin verine erişemez.
+
+
+----------------------------------------------------
+ADIM 4 — UYGULAMADA HESAP OLUŞTUR
+----------------------------------------------------
+
+1. Tarayıcıda http://localhost:5174 adresini aç
+
+2. Sağ üst köşedeki hesap / giriş ikonuna tıkla
+
+3. "Hesap Oluştur" seç
+
+4. E-posta ve şifre gir → Kayıt ol
+
+✓ Hesap oluşturuldu, veriler Firebase'e senkronize oluyor.
+
+
+----------------------------------------------------
+ADIM 5 — TELEFONA GİRİŞ YAP
+----------------------------------------------------
+
+Uygulama telefona kurulduktan sonra:
+
+1. Giriş ekranında aynı e-posta ve şifreyi gir
+
+2. Giriş yap
+
+✓ Bilgisayardaki tüm ödemeler telefonda da görünür.
+✓ Telefona eklenen ödemeler bilgisayarda da görünür.
+
+
+----------------------------------------------------
+NOTLAR
+----------------------------------------------------
+
+- Şifre en az 6 karakter olmalı (Firebase kuralı)
+- İnternet bağlantısı olmadan uygulama çevrimdışı çalışır,
+  bağlantı gelince otomatik senkronize olur
+- Tema, PIN kilidi, bildirim ayarları cihaza özel kalır (senkronize olmaz)
+- Ödeme kayıtları, kategoriler ve kişiler senkronize olur
+
+====================================================

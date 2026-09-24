@@ -1,0 +1,41 @@
+rules_version = '2';
+
+// Timeless — Firestore güvenlik kuralları
+//
+// Firebase panelinde: Firestore Database → Rules → bu dosyanın içeriğini
+// yapıştır → Publish.
+//
+// Model: **her hesap kendi verisi**. Kayıtlar `teams/<kullanıcı kimliği>`
+// altında durur ve yalnızca o kullanıcı erişebilir. Uygulamayı bir başkasına
+// verdiğinde o kişi kendi e-postasıyla hesap açar, kendi listesini tutar ve
+// kendi cihazları (telefon + bilgisayar) arasında eşitlenir. Kimse kimsenin
+// kaydını göremez.
+//
+// Bu yüzden Firebase ayarlarının (apiKey vb.) uygulamanın içinde görünür
+// olması sorun değil: anahtar kimseye başkasının verisini açmaz, veriyi
+// koruyan şey aşağıdaki `benim()` koşuludur.
+//
+// Varsayılan olarak her şey kapalı; yalnızca aşağıdaki yollar açılır.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function benim(teamId) {
+      return request.auth != null && request.auth.uid == teamId;
+    }
+
+    // Kişinin kendi verisi: ödemeler, müdahaleler, kişiler, ayarlar
+    match /teams/{teamId}/{collection}/{docId} {
+      allow read, write: if benim(teamId);
+    }
+
+    // Hesap kartı — yalnızca sahibi okur ve yazar
+    match /members/{uid} {
+      allow read, write: if benim(uid);
+    }
+
+    // Yukarıda açıkça izin verilmeyen her şey kapalı
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
