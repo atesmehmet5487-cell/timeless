@@ -60,7 +60,7 @@ describe('günlük plan Excel çıktısı', () => {
   const doc = planToDoc(buildReport(plan, TODAY, 'Mehmet Ateş'));
 
   it('dosya adı günün tarihini taşır', () => {
-    expect(excelFileName(doc)).toBe('odeme-plani-2026-09-15.xlsx');
+    expect(excelFileName(doc)).toBe('odeme-listesi-2026-09-15.xlsx');
   });
 
   it('başlık, sütunlar ve kayıt içeride', async () => {
